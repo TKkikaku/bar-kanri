@@ -332,7 +332,7 @@
 
   /* Bar chart */
   .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 120px; margin-bottom: 8px; }
-  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; }
   .bar-col .val { font-size: 9px; color: var(--text-sub); font-family: "SF Mono", monospace; }
   .bar-col .bar { width: 100%; background: var(--gold); border-radius: 3px 3px 0 0; min-height: 2px; }
   .bar-col.weekend .bar { background: var(--bg-sidebar); }
@@ -686,6 +686,7 @@
           <button id="type-sale-btn" class="active" onclick="setInputType('sale')">売上</button>
           <button id="type-expense-btn" onclick="setInputType('expense')">支出</button>
           <button id="type-back-btn" onclick="setInputType('back')">売上バック</button>
+          <button id="type-business-btn" onclick="setInputType('business')">営業</button>
         </div>
 
         <!-- Sale form -->
@@ -796,6 +797,44 @@
 
           <button class="btn btn-primary mt-14" onclick="addBack()">売上バックを登録</button>
         </div>
+
+        <!-- Business form -->
+        <div id="form-business" class="hidden">
+          <div class="info-text">営業終了後に1日1回、その日の来店状況を記録します。売上とは別に集計されます。</div>
+
+          <div class="form-group">
+            <label class="form-label">日付</label>
+            <input type="date" id="business-date">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">総組数</label>
+            <input type="number" id="business-groups" placeholder="例: 8" inputmode="numeric" min="0">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">総客数（任意）</label>
+            <input type="number" id="business-customers" placeholder="例: 18" inputmode="numeric" min="0">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">今日の主な客層（複数選択可・任意）</label>
+            <div class="chip-grid col-3" id="business-age-chips">
+              <div class="chip" data-age="20代" onclick="toggleBusinessAge(this)">20代</div>
+              <div class="chip" data-age="30代" onclick="toggleBusinessAge(this)">30代</div>
+              <div class="chip" data-age="40代" onclick="toggleBusinessAge(this)">40代</div>
+              <div class="chip" data-age="50代" onclick="toggleBusinessAge(this)">50代</div>
+              <div class="chip" data-age="60代以上" onclick="toggleBusinessAge(this)">60代以上</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">メモ（任意）</label>
+            <input type="text" id="business-memo" placeholder="例: 常連多め">
+          </div>
+
+          <button class="btn btn-primary" onclick="addBusiness()">営業データを登録</button>
+        </div>
       </div>
     </section>
 
@@ -819,6 +858,7 @@
         <button data-filter="sale" onclick="setHistoryFilter('sale', this)">売上</button>
         <button data-filter="expense" onclick="setHistoryFilter('expense', this)">支出</button>
         <button data-filter="back" onclick="setHistoryFilter('back', this)">バック</button>
+        <button data-filter="business" onclick="setHistoryFilter('business', this)">営業</button>
       </div>
 
       <div id="history-container"></div>
@@ -874,6 +914,11 @@
         <div class="card">
           <h2>カテゴリ別 支出</h2>
           <div id="category-breakdown-list" class="grid-2"></div>
+        </div>
+
+        <div class="card">
+          <h2>営業データ</h2>
+          <div id="business-summary"></div>
         </div>
       </div>
 
@@ -1160,6 +1205,17 @@ function seedSampleData() {
     }
   }
 
+  function addBiz(daysBack, store, groups, customers, ages, memo) {
+    const d = new Date(today); d.setDate(d.getDate() - daysBack);
+    records.push({
+      id: Date.now() + Math.random() * 10000, type: 'business',
+      date: d.toISOString().slice(0, 10),
+      groups, customers: customers || 0,
+      ages: ages || [],
+      memo: memo || '', store
+    });
+  }
+
   // スタンド
   addSale(0, 'スタンド', 'ドリンク売上', '現金', 54000, '火曜営業');
   addSale(0, 'スタンド', 'ドリンク売上', '電子決済', 22000, '火曜営業');
@@ -1211,6 +1267,19 @@ function seedSampleData() {
   addBack(12, 'スタンド', '美咲', 40000, 14, '');
   addBack(14, 'スタンド', 'ゆい', 25000, 9, '');
 
+  // スタンド 営業データ (平日=少なめ/中高年、週末=多め/若年)
+  addBiz(0, 'スタンド', 5, 12, ['40代','50代'], '');
+  addBiz(2, 'スタンド', 4, 9, ['50代','60代以上'], '');
+  addBiz(3, 'スタンド', 10, 22, ['20代','30代'], '日曜');
+  addBiz(4, 'スタンド', 13, 30, ['20代','30代','40代'], '土曜');
+  addBiz(5, 'スタンド', 9, 20, ['30代','40代'], '');
+  addBiz(6, 'スタンド', 3, 7, ['50代'], '平日静か');
+  addBiz(7, 'スタンド', 15, 35, ['30代','40代'], '貸切');
+  addBiz(10, 'スタンド', 11, 24, ['20代','30代'], '');
+  addBiz(12, 'スタンド', 12, 28, ['20代','30代','40代'], '');
+  addBiz(14, 'スタンド', 4, 8, ['50代'], '');
+  addBiz(15, 'スタンド', 3, 6, ['60代以上'], '常連のみ');
+
   // サンライズ
   addSale(1, 'サンライズ', 'ドリンク売上', '現金', 38000, '');
   addSale(1, 'サンライズ', 'ドリンク売上', '電子決済', 30000, '');
@@ -1227,6 +1296,13 @@ function seedSampleData() {
   addBack(3, 'サンライズ', 'つばき', 25000, 8, '');
   addBack(5, 'サンライズ', 'れん', 40000, 14, '');
   addBack(7, 'サンライズ', 'つばき', 55000, 20, '金曜');
+
+  // サンライズ 営業データ
+  addBiz(1, 'サンライズ', 6, 14, ['40代','50代'], '');
+  addBiz(3, 'サンライズ', 11, 25, ['20代','30代'], '日曜');
+  addBiz(5, 'サンライズ', 13, 28, ['30代','40代'], '');
+  addBiz(7, 'サンライズ', 14, 32, ['20代','30代','40代'], '金曜ピーク');
+  addBiz(10, 'サンライズ', 10, 22, ['20代','30代'], '');
 
   ST.records = records;
 
@@ -1329,11 +1405,11 @@ function closeMore() { document.getElementById('more-overlay').classList.remove(
 // ====================================================
 function setInputType(type) {
   currentInputType = type;
-  ['sale', 'expense', 'back'].forEach(t => {
+  ['sale', 'expense', 'back', 'business'].forEach(t => {
     document.getElementById(`form-${t}`).classList.toggle('hidden', t !== type);
     document.getElementById(`type-${t}-btn`).classList.toggle('active', t === type);
   });
-  const titles = { sale: '売上を入力', expense: '支出を入力', back: '売上バックを入力' };
+  const titles = { sale: '売上を入力', expense: '支出を入力', back: '売上バックを入力', business: '営業データを入力' };
   document.getElementById('input-page-title').textContent = titles[type];
   if (type === 'back') updateStaffSelect();
 }
@@ -1396,7 +1472,7 @@ document.addEventListener('input', e => {
 
 function resetInputForms() {
   const today = new Date().toISOString().slice(0, 10);
-  ['sale-date', 'expense-date', 'back-date'].forEach(id => {
+  ['sale-date', 'expense-date', 'back-date', 'business-date'].forEach(id => {
     const el = document.getElementById(id);
     if (el && !el.value) el.value = today;
   });
@@ -1503,6 +1579,65 @@ function addBack() {
   document.getElementById('back-staff').value = '';
   updateBackPreview();
   showToast('売上バックを登録しました');
+}
+
+// ====================================================
+// Business data (日次営業サマリー)
+// ====================================================
+let currentBusinessAges = [];
+
+function toggleBusinessAge(el) {
+  const age = el.dataset.age;
+  if (currentBusinessAges.includes(age)) {
+    currentBusinessAges = currentBusinessAges.filter(a => a !== age);
+    el.classList.remove('active');
+  } else {
+    currentBusinessAges.push(age);
+    el.classList.add('active');
+  }
+}
+
+function addBusiness() {
+  const date = document.getElementById('business-date').value;
+  const groups = parseInt(document.getElementById('business-groups').value);
+  const customers = parseInt(document.getElementById('business-customers').value) || 0;
+  const memo = document.getElementById('business-memo').value;
+
+  if (!date) { showToast('日付を入力してください'); return; }
+  if (!groups || groups <= 0) { showToast('総組数を入力してください'); return; }
+
+  let records = ST.records;
+  const existing = records.find(r => r.type === 'business' && r.date === date && r.store === ST.store);
+  if (existing) {
+    if (!confirm(`${date} の営業データは既に登録されています。上書きしますか？`)) return;
+    records = records.filter(r => !(r.type === 'business' && r.date === date && r.store === ST.store));
+  }
+
+  records.push({
+    id: editingId || Date.now(), type: 'business', date,
+    groups, customers,
+    ages: [...currentBusinessAges],
+    memo, store: ST.store
+  });
+  ST.records = records;
+  editingId = null;
+  clearBusinessForm();
+  showToast('営業データを登録しました');
+}
+
+function clearBusinessForm() {
+  document.getElementById('business-groups').value = '';
+  document.getElementById('business-customers').value = '';
+  document.getElementById('business-memo').value = '';
+  currentBusinessAges = [];
+  document.querySelectorAll('#business-age-chips .chip').forEach(c => c.classList.remove('active'));
+}
+
+function deleteBusiness(id) {
+  confirmAction('営業データを削除', 'この日の営業データを削除します。元に戻せません。', () => {
+    ST.records = ST.records.filter(r => r.id !== id);
+    renderAll(); showToast('削除しました');
+  });
 }
 
 // ====================================================
@@ -1620,6 +1755,27 @@ function recordItemHtml(r, closed) {
         </div>` : ''}
       </div>`;
   }
+  if (r.type === 'business') {
+    const canEdit = !closed;
+    const ageBadges = (r.ages || []).map(a => `<span class="badge">${a}</span>`).join('');
+    const customers = r.customers ? ` ${r.customers}人` : '';
+    return `
+      <div class="record-item ${closed ? 'closed' : ''}">
+        <div class="ri-main">
+          <div style="flex:1; min-width:0;">
+            <div class="ri-title">${r.groups}組${customers}${r.memo ? ' · ' + r.memo : ''}</div>
+            ${ageBadges ? `<div class="ri-badges">${ageBadges}</div>` : ''}
+          </div>
+          <div class="ri-right">
+            <div class="ri-amount" style="color: var(--text);">営業</div>
+            <div class="ri-status">${closed ? '🔒 締め済' : '—'}</div>
+          </div>
+        </div>
+        ${canEdit ? `<div class="ri-actions">
+          <button class="btn-delete-small" onclick="deleteBusiness(${r.id})">削除</button>
+        </div>` : ''}
+      </div>`;
+  }
   return '';
 }
 
@@ -1705,8 +1861,12 @@ function renderDashboard() {
   const todayBacks = storeRecs.filter(r => r.date === todayStr && r.type === 'back');
   const todayDrinks = todayBacks.reduce((s, r) => s + (r.nominatedDrinks || 0), 0);
   const todayAssigned = todayBacks.reduce((s, r) => s + (r.assignedSales || 0), 0);
+  const todayBiz = storeRecs.find(r => r.date === todayStr && r.type === 'business');
   document.getElementById('dash-today-sales').textContent = '¥' + todaySales.toLocaleString();
-  document.getElementById('dash-today-meta').textContent = todayBacks.length ? `担当売上 ¥${todayAssigned.toLocaleString()} / 指名${todayDrinks}杯` : '—';
+  const metaParts = [];
+  if (todayBiz) metaParts.push(`${todayBiz.groups}組来店`);
+  if (todayBacks.length) metaParts.push(`担当売上 ¥${todayAssigned.toLocaleString()} / 指名${todayDrinks}杯`);
+  document.getElementById('dash-today-meta').textContent = metaParts.length ? metaParts.join(' · ') : '—';
 
   const monthRecs = storeRecs.filter(r => r.date.startsWith(monthStr));
   const monthIncome = monthRecs.filter(r => r.type === 'sale').reduce((s, r) => s + r.amount, 0);
@@ -1912,6 +2072,81 @@ function renderSummaryMonthly(records, income) {
         <div class="br-bar"><div class="fill fill-red" style="width:${Math.round(v / maxC * 100)}%"></div></div>
       </div>`).join('');
   }
+
+  renderBusinessSummary(records, saleRecs);
+}
+
+function renderBusinessSummary(records, saleRecs) {
+  const el = document.getElementById('business-summary');
+  const bizRecs = records.filter(r => r.type === 'business');
+  if (!bizRecs.length) {
+    el.innerHTML = '<div class="empty" style="padding:8px 0;">営業データが登録されていません</div>';
+    return;
+  }
+
+  const totalGroups = bizRecs.reduce((s, r) => s + (r.groups || 0), 0);
+  const totalCustomers = bizRecs.reduce((s, r) => s + (r.customers || 0), 0);
+  const totalSales = saleRecs.reduce((s, r) => s + r.amount, 0);
+  const avgPerGroup = totalGroups > 0 ? Math.round(totalSales / totalGroups) : 0;
+  const avgPerCustomer = totalCustomers > 0 ? Math.round(totalSales / totalCustomers) : 0;
+
+  const dowGroups = [0, 0, 0, 0, 0, 0, 0];
+  const dowDays = [0, 0, 0, 0, 0, 0, 0];
+  bizRecs.forEach(r => {
+    const dow = new Date(r.date).getDay();
+    dowGroups[dow] += r.groups || 0;
+    dowDays[dow]++;
+  });
+  const dowAvg = dowGroups.map((g, i) => dowDays[i] > 0 ? (g / dowDays[i]).toFixed(1).replace(/\.0$/, '') : '-');
+  const dowAvgNum = dowGroups.map((g, i) => dowDays[i] > 0 ? g / dowDays[i] : 0);
+  const maxDow = Math.max(...dowAvgNum, 0.1);
+
+  const ageCounts = { '20代': 0, '30代': 0, '40代': 0, '50代': 0, '60代以上': 0 };
+  bizRecs.forEach(r => { (r.ages || []).forEach(a => { if (a in ageCounts) ageCounts[a]++; }); });
+  const maxAge = Math.max(...Object.values(ageCounts), 1);
+
+  const dowBars = dowAvgNum.map((v, i) => {
+    const pct = v > 0 ? Math.max(Math.round(v / maxDow * 100), 2) : 0;
+    const isWeekend = (i === 5 || i === 6);
+    return `<div class="bar-col ${isWeekend ? 'weekend' : ''}">
+      <div class="val">${dowAvg[i]}組</div>
+      <div class="bar" style="height:${pct}%;"></div>
+    </div>`;
+  }).join('');
+  const dowLabels = WEEKDAYS_JP.map((d, i) => `<div class="bar-label ${i === 5 || i === 6 ? 'weekend' : ''}">${d}</div>`).join('');
+
+  let html = `
+    <div class="grid-3 mb-14">
+      <div class="stat"><div class="stat-label">総組数</div><div class="stat-value mono" style="font-size:18px;">${totalGroups}組</div></div>
+      <div class="stat"><div class="stat-label">平均客単価</div><div class="stat-value mono" style="font-size:18px;">¥${avgPerGroup.toLocaleString()}</div></div>
+      <div class="stat"><div class="stat-label">営業日数</div><div class="stat-value mono" style="font-size:18px;">${bizRecs.length}日</div></div>
+    </div>`;
+
+  if (totalCustomers > 0) {
+    html += `
+    <div style="background:var(--bg-alt); border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12px; color:var(--text-sub); display:flex; justify-content:space-between;">
+      <span>総客数 <span class="mono" style="color:var(--text); font-weight:500;">${totalCustomers}人</span></span>
+      <span>一人当たり <span class="mono" style="color:var(--text); font-weight:500;">¥${avgPerCustomer.toLocaleString()}</span></span>
+    </div>`;
+  }
+
+  html += `
+    <div style="font-size:12px; color:var(--text-sub); margin-bottom:8px;">曜日別 平均組数</div>
+    <div class="bar-chart">${dowBars}</div>
+    <div class="bar-labels">${dowLabels}</div>`;
+
+  html += `
+    <div style="margin-top:16px; padding-top:14px; border-top:0.5px dashed var(--border);">
+      <div style="font-size:12px; color:var(--text-sub); margin-bottom:8px;">主な客層（出現日数）</div>
+      ${Object.entries(ageCounts).map(([age, cnt]) => `
+        <div class="breakdown-row">
+          <div class="br-top"><span>${age}</span><span class="mono">${cnt}日</span></div>
+          <div class="br-bar"><div class="fill fill-gold" style="width:${Math.round(cnt / maxAge * 100)}%"></div></div>
+        </div>
+      `).join('')}
+    </div>`;
+
+  el.innerHTML = html;
 }
 
 function renderSummaryDaily(records) {
