@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Bar 収支管理</title>
@@ -76,52 +76,54 @@
   .serif { font-family: "Hiragino Mincho ProN", "YuMincho", "Noto Serif JP", serif; }
   .mono { font-family: "SF Mono", "Menlo", "Consolas", monospace; font-variant-numeric: tabular-nums; }
 
-  /* Layout */
-  .app { display: flex; min-height: 100vh; }
-  .sidebar {
-    width: 200px; background: var(--bg-sidebar); color: var(--sidebar-text);
-    padding: 20px 14px; flex-shrink: 0;
-    display: flex; flex-direction: column;
-    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  /* Layout - Mobile first */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+  .sidebar { display: none; }
+  .main { flex: 1; min-width: 0; padding: 0 0 72px 0; }
+  .mobile-header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-sidebar); color: var(--sidebar-text);
+    padding: 14px 18px; position: sticky; top: 0; z-index: 20;
   }
-  .main { flex: 1; min-width: 0; padding: 24px 28px 80px; }
-  .mobile-header { display: none; }
-  .mobile-tabbar { display: none; }
+  .mobile-header .title { font-size: 16px; font-weight: 500; font-family: "Hiragino Mincho ProN", serif; }
+  .mobile-header .actions { display: flex; gap: 8px; align-items: center; }
+  .store-chip {
+    padding: 5px 10px; border-radius: 7px; background: var(--gold-bg); color: var(--gold);
+    font-size: 11px; display: flex; align-items: center; gap: 5px; cursor: pointer;
+  }
+  .store-chip::before { content: ""; width: 5px; height: 5px; background: var(--gold); border-radius: 50%; }
+  .theme-toggle {
+    width: 30px; height: 30px; border-radius: 7px; background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center; color: var(--gold);
+    cursor: pointer; font-size: 13px; border: none;
+  }
+  .page-content { padding: 14px; }
+  .mobile-tabbar {
+    display: flex; position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--bg-card); border-top: 0.5px solid var(--border);
+    z-index: 20; padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mobile-tabbar button {
+    flex: 1; background: none; border: none; padding: 10px 0;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    color: var(--text-sub); cursor: pointer; font-size: 9px;
+  }
+  .mobile-tabbar button .icon { font-size: 17px; }
+  .mobile-tabbar button.active { color: var(--text); font-weight: 500; }
+  .mobile-tabbar button.active .icon { color: var(--gold); }
 
-  @media (max-width: 900px) {
-    .sidebar { display: none; }
-    .main { padding: 0 0 72px 0; }
-    .mobile-header {
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--bg-sidebar); color: var(--sidebar-text);
-      padding: 14px 18px; position: sticky; top: 0; z-index: 20;
+  /* Tablet/Desktop (901px+) */
+  @media (min-width: 901px) {
+    .app { flex-direction: row; }
+    .sidebar {
+      display: flex; width: 200px; background: var(--bg-sidebar); color: var(--sidebar-text);
+      padding: 20px 14px; flex-shrink: 0;
+      flex-direction: column;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
     }
-    .mobile-header .title { font-size: 16px; font-weight: 500; font-family: "Hiragino Mincho ProN", serif; }
-    .mobile-header .actions { display: flex; gap: 8px; align-items: center; }
-    .store-chip {
-      padding: 5px 10px; border-radius: 7px; background: var(--gold-bg); color: var(--gold);
-      font-size: 11px; display: flex; align-items: center; gap: 5px; cursor: pointer;
-    }
-    .store-chip::before { content: ""; width: 5px; height: 5px; background: var(--gold); border-radius: 50%; }
-    .theme-toggle {
-      width: 30px; height: 30px; border-radius: 7px; background: rgba(255,255,255,0.08);
-      display: flex; align-items: center; justify-content: center; color: var(--gold);
-      cursor: pointer; font-size: 13px; border: none;
-    }
-    .page-content { padding: 14px; }
-    .mobile-tabbar {
-      display: flex; position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--bg-card); border-top: 0.5px solid var(--border);
-      z-index: 20; padding-bottom: env(safe-area-inset-bottom);
-    }
-    .mobile-tabbar button {
-      flex: 1; background: none; border: none; padding: 10px 0;
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
-      color: var(--text-sub); cursor: pointer; font-size: 9px;
-    }
-    .mobile-tabbar button .icon { font-size: 17px; }
-    .mobile-tabbar button.active { color: var(--text); font-weight: 500; }
-    .mobile-tabbar button.active .icon { color: var(--gold); }
+    .main { padding: 24px 28px 80px; }
+    .mobile-header { display: none; }
+    .mobile-tabbar { display: none; }
   }
 
   /* Sidebar */
