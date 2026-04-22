@@ -1102,10 +1102,13 @@ const PAYMENT_METHODS = ['現金', 'カード', '電子決済'];
 const WEEKDAYS_JP = ['日', '月', '火', '水', '木', '金', '土'];
 
 // 統一されたレコード構造
-// type: 'sale' | 'expense' | 'back'
+// type: 'sale' | 'expense' | 'back' | 'business'
 // sale: { type, date, category, payment, amount, memo, store }
 // expense: { type, date, category, amount, memo, isAutoBack, relatedId, store }
 // back: { type, date, staff, assignedSales, nominatedDrinks, salesBack, drinkBack, totalBack, memo, store, expenseId }
+// business: { type, date, groups, customers, ages, memo, store }
+
+const DATA_VERSION = '2';
 
 const ST = {
   get records() { return JSON.parse(localStorage.getItem('bkd3_records') || '[]'); },
@@ -1127,7 +1130,9 @@ const ST = {
   get loggedIn() { return localStorage.getItem('bkd3_logged_in') === '1'; },
   set loggedIn(v) { localStorage.setItem('bkd3_logged_in', v ? '1' : '0'); },
   get seeded() { return localStorage.getItem('bkd3_seeded') === '1'; },
-  set seeded(v) { localStorage.setItem('bkd3_seeded', v ? '1' : '0'); }
+  set seeded(v) { localStorage.setItem('bkd3_seeded', v ? '1' : '0'); },
+  get dataVersion() { return localStorage.getItem('bkd3_version') || '1'; },
+  set dataVersion(v) { localStorage.setItem('bkd3_version', v); }
 };
 
 // State
@@ -1324,6 +1329,20 @@ function seedSampleData() {
   }
   ST.closings = closings;
   ST.seeded = true;
+  ST.dataVersion = DATA_VERSION;
+}
+
+function ensureDataFresh() {
+  if (!ST.seeded) {
+    seedSampleData();
+    return false;
+  }
+  if (ST.dataVersion !== DATA_VERSION) {
+    ['bkd3_records', 'bkd3_closings', 'bkd3_staff', 'bkd3_goals'].forEach(k => localStorage.removeItem(k));
+    seedSampleData();
+    return true;
+  }
+  return false;
 }
 
 // ====================================================
@@ -1331,10 +1350,11 @@ function seedSampleData() {
 // ====================================================
 function doLogin() {
   ST.loggedIn = true;
-  if (!ST.seeded) seedSampleData();
+  const reseeded = ensureDataFresh();
   document.getElementById('login-screen').classList.remove('show');
   document.getElementById('app').classList.remove('hidden');
   init();
+  if (reseeded) setTimeout(() => showToast('サンプルデータを更新しました'), 400);
 }
 function doLogout() {
   ST.loggedIn = false;
@@ -2029,8 +2049,9 @@ function renderSummaryMonthly(records, income) {
   const barCols = byDowAvg.map((v, i) => {
     const pct = v > 0 ? Math.max(Math.round(v / max * 100), 2) : 0;
     const isWeekend = (i === 5 || i === 6);
+    const label = v > 0 ? (v / 10000).toFixed(1).replace(/\.0$/, '') + '万' : '-';
     return `<div class="bar-col ${isWeekend ? 'weekend' : ''}">
-      <div class="val">${v > 0 ? Math.round(v / 1000) + 'k' : '-'}</div>
+      <div class="val">${label}</div>
       <div class="bar" style="height:${pct}%"></div>
     </div>`;
   }).join('');
@@ -2436,14 +2457,14 @@ function saveBackSettings() {
 
 function confirmReset() {
   confirmAction('全データをリセット', '全ての売上・支出・バック・締め・スタッフデータが削除されます。元に戻せません。', () => {
-    ['bkd3_records', 'bkd3_closings', 'bkd3_staff', 'bkd3_goals', 'bkd3_seeded'].forEach(k => localStorage.removeItem(k));
+    ['bkd3_records', 'bkd3_closings', 'bkd3_staff', 'bkd3_goals', 'bkd3_seeded', 'bkd3_version'].forEach(k => localStorage.removeItem(k));
     showToast('リセットしました');
     setTimeout(() => location.reload(), 500);
   });
 }
 function loadSampleData() {
   confirmAction('サンプルデータを再投入', '現在のデータを削除してサンプルデータに置き換えます。', () => {
-    ['bkd3_records', 'bkd3_closings', 'bkd3_staff', 'bkd3_goals', 'bkd3_seeded'].forEach(k => localStorage.removeItem(k));
+    ['bkd3_records', 'bkd3_closings', 'bkd3_staff', 'bkd3_goals', 'bkd3_seeded', 'bkd3_version'].forEach(k => localStorage.removeItem(k));
     seedSampleData();
     renderAll();
     showToast('サンプルデータを投入しました');
@@ -2518,9 +2539,10 @@ function init() {
 (function start() {
   applyTheme();
   if (ST.loggedIn) {
-    if (!ST.seeded) seedSampleData();
+    const reseeded = ensureDataFresh();
     document.getElementById('app').classList.remove('hidden');
     init();
+    if (reseeded) setTimeout(() => showToast('サンプルデータを更新しました'), 400);
   } else {
     document.getElementById('login-screen').classList.add('show');
   }
