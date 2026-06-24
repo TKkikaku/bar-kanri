@@ -117,11 +117,17 @@
 
       <section id="page-history" class="page">
         <div class="page-header"><div class="label">History</div><h1>履歴</h1></div>
-        <div class="card">
-          <h2>履歴一覧</h2>
-          <p class="muted">フィルタ 3 種（すべて / 売上 / 支出）。担当別の見せ方を優先します。</p>
-          <div class="placeholder-note">この画面は手順5で実装します</div>
+        <div class="month-nav">
+          <button type="button" id="hist-prev" aria-label="前の月">‹</button>
+          <span id="hist-month-label" class="month-label">—</span>
+          <button type="button" id="hist-next" aria-label="次の月">›</button>
         </div>
+        <div class="tabs" id="hist-filter">
+          <button type="button" class="tab active" data-hist-filter="all">すべて</button>
+          <button type="button" class="tab" data-hist-filter="sale">売上</button>
+          <button type="button" class="tab" data-hist-filter="expense">支出</button>
+        </div>
+        <div id="hist-list"></div>
       </section>
 
       <section id="page-summary" class="page">

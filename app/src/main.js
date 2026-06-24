@@ -3,6 +3,7 @@ import { supabase } from './supabase.js'
 import { isUnlocked, tryUnlock, lock } from './auth.js'
 import { getStore, setStore } from './store.js'
 import { initInput } from './input.js'
+import { initHistory, loadHistory } from './history.js'
 
 const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
@@ -69,6 +70,7 @@ async function runConnectionTest() {
 function showPage(name) {
   $$('.page').forEach((p) => p.classList.toggle('active', p.id === `page-${name}`))
   $$('[data-page]').forEach((b) => b.classList.toggle('active', b.dataset.page === name))
+  if (name === 'history') loadHistory()
 }
 
 // ===================== 店舗切替（§8） =====================
@@ -85,6 +87,7 @@ function showApp() {
   showPage('dashboard')
   runConnectionTest()
   initInput()
+  initHistory()
 }
 
 function showLock() {
@@ -119,6 +122,8 @@ appMain.addEventListener('click', (e) => {
     setStore(storeBtn.dataset.storeBtn)
     renderStore()
     console.log('[store] 切替 →', getStore())
+    // 表示中の画面を店舗に合わせて更新
+    if ($('#page-history').classList.contains('active')) loadHistory()
     return
   }
   if (e.target.closest('.logout-link')) {

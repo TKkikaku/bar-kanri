@@ -75,6 +75,65 @@ export async function addSale(sale) {
   return { sale: inserted, back }
 }
 
+// 月の範囲（YYYY-MM → [start, next)）
+function monthBounds(month) {
+  const [y, m] = month.split('-').map(Number)
+  const start = `${month}-01`
+  const ny = m === 12 ? y + 1 : y
+  const nm = m === 12 ? 1 : m + 1
+  const next = `${ny}-${String(nm).padStart(2, '0')}-01`
+  return { start, next }
+}
+
+// PostgREST の1000件上限対策（§12）。order 付きクエリをページングで全件取得。
+async function paginate(queryFn, pageSize = 1000) {
+  const all = []
+  let from = 0
+  // 上限ガード（暴走防止）
+  for (let page = 0; page < 1000; page++) {
+    const { data, error } = await queryFn(from, from + pageSize - 1)
+    if (error) throw error
+    all.push(...data)
+    if (!data || data.length < pageSize) break
+    from += pageSize
+  }
+  return all
+}
+
+// 指定月・現在店舗の売上（担当名を埋め込み）
+export async function fetchSalesByMonth(month) {
+  const store = getStore()
+  const { start, next } = monthBounds(month)
+  return paginate((from, to) =>
+    supabase
+      .from('daily_sales')
+      .select('*, staff:staff_members(name, is_free)')
+      .eq('store', store)
+      .gte('date', start)
+      .lt('date', next)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, to)
+  )
+}
+
+// 指定月・現在店舗の支出（バック自動計上行を含む）
+export async function fetchExpensesByMonth(month) {
+  const store = getStore()
+  const { start, next } = monthBounds(month)
+  return paginate((from, to) =>
+    supabase
+      .from('daily_expenses')
+      .select('*')
+      .eq('store', store)
+      .gte('date', start)
+      .lt('date', next)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, to)
+  )
+}
+
 // 支出を登録（§7.2）
 export async function addExpense(exp) {
   const store = getStore()
