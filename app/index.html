@@ -21,20 +21,105 @@
         placeholder="パスワード"
         aria-label="パスワード"
       />
-      <button type="submit">ロック解除</button>
+      <button type="submit" class="btn btn-primary">ロック解除</button>
       <p id="lock-error" hidden>パスワードが違います</p>
     </form>
   </div>
 
-  <!-- アプリ本体（解錠後に表示 / 手順2 時点はプレースホルダ） -->
-  <div id="app-main" hidden>
-    <header id="app-header">
-      <span class="brand">bar-kanri</span>
-      <button id="logout-btn" type="button">ログアウト</button>
+  <!-- アプリ本体（解錠後に表示） -->
+  <div id="app-main" class="app" hidden>
+
+    <!-- デスクトップ用サイドバー -->
+    <aside class="sidebar">
+      <div class="brand">Bar 収支</div>
+      <div class="store-switch" data-store-switch>
+        <button type="button" data-store-btn="スタンド">スタンド</button>
+        <button type="button" data-store-btn="サンライズ">サンライズ</button>
+      </div>
+      <nav class="nav">
+        <button type="button" class="nav-btn active" data-page="dashboard">ダッシュボード</button>
+        <button type="button" class="nav-btn" data-page="input">入力</button>
+        <button type="button" class="nav-btn" data-page="history">履歴</button>
+        <button type="button" class="nav-btn" data-page="summary">集計</button>
+        <button type="button" class="nav-btn" data-page="settings">設定</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button type="button" class="logout-link">ログアウト</button>
+      </div>
+    </aside>
+
+    <!-- モバイル用ヘッダー -->
+    <header class="mobile-header">
+      <span class="brand">Bar 収支</span>
+      <div class="store-switch sm" data-store-switch>
+        <button type="button" data-store-btn="スタンド">スタンド</button>
+        <button type="button" data-store-btn="サンライズ">サンライズ</button>
+      </div>
+      <button type="button" class="logout-link">ログアウト</button>
     </header>
-    <main id="app-content">
-      <p id="conn-status">Supabase 接続確認中…</p>
+
+    <!-- 本文（各画面は次手順で実装。手順3 はレイアウト確認用プレースホルダ） -->
+    <main class="content">
+      <section id="page-dashboard" class="page active">
+        <div class="page-header"><div class="label">Dashboard</div><h1>ダッシュボード</h1></div>
+        <div class="card">
+          <h2>スタッフ別実績</h2>
+          <p class="muted">担当ごとの 売上 / 組数 / 客層 / 指名ドリンク数 を、今日・今月で表示します。</p>
+          <div class="placeholder-note">この画面は手順6で実装します</div>
+          <p id="conn-status" class="muted" style="margin-top:12px;">Supabase 接続確認中…</p>
+        </div>
+      </section>
+
+      <section id="page-input" class="page">
+        <div class="page-header"><div class="label">Input</div><h1>入力</h1></div>
+        <div class="card">
+          <h2>売上入力 / 支出入力</h2>
+          <p class="muted">2 タブ構成。売上は担当・組数・客層・指名ドリンク数を含み、バックは自動計算します。</p>
+          <div class="placeholder-note">この画面は手順4で実装します</div>
+        </div>
+      </section>
+
+      <section id="page-history" class="page">
+        <div class="page-header"><div class="label">History</div><h1>履歴</h1></div>
+        <div class="card">
+          <h2>履歴一覧</h2>
+          <p class="muted">フィルタ 3 種（すべて / 売上 / 支出）。担当別の見せ方を優先します。</p>
+          <div class="placeholder-note">この画面は手順5で実装します</div>
+        </div>
+      </section>
+
+      <section id="page-summary" class="page">
+        <div class="page-header"><div class="label">Summary</div><h1>集計</h1></div>
+        <div class="card">
+          <h2>集計</h2>
+          <p class="muted">担当別集計を最優先。支出カテゴリ別の集計は表示します（支払い方法別・売上カテゴリ別・締めは無し）。</p>
+          <div class="placeholder-note">この画面は手順7で実装します</div>
+        </div>
+      </section>
+
+      <section id="page-settings" class="page">
+        <div class="page-header"><div class="label">Settings</div><h1>設定</h1></div>
+        <div class="card">
+          <h2>設定</h2>
+          <p class="muted">スタッフ管理（「フリー」は削除不可）/ バック率・ドリンク単価 / 月次目標 / 店舗切替。</p>
+          <div class="placeholder-note">この画面は手順8で実装します</div>
+        </div>
+        <div class="card">
+          <h2>シフト機能</h2>
+          <p class="muted">将来実装予定（今回スコープ外・別案件）。</p>
+        </div>
+      </section>
     </main>
+
+    <!-- モバイル用 下タブ -->
+    <nav class="tabbar">
+      <button type="button" class="active" data-page="dashboard"><span class="ic">🏠</span><span>ホーム</span></button>
+      <button type="button" data-page="input"><span class="ic">✏️</span><span>入力</span></button>
+      <button type="button" data-page="history"><span class="ic">📋</span><span>履歴</span></button>
+      <button type="button" data-page="summary"><span class="ic">📊</span><span>集計</span></button>
+      <button type="button" data-page="settings"><span class="ic">⚙️</span><span>設定</span></button>
+    </nav>
+
   </div>
 
   <script type="module" src="/src/main.js"></script>

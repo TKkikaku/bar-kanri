@@ -1,17 +1,19 @@
 import './style.css'
 import { supabase } from './supabase.js'
 import { isUnlocked, tryUnlock, lock } from './auth.js'
+import { getStore, setStore } from './store.js'
+
+const $ = (sel, root = document) => root.querySelector(sel)
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
 
 // --- DOM ---
-const lockScreen = document.querySelector('#lock-screen')
-const appMain = document.querySelector('#app-main')
-const lockForm = document.querySelector('#lock-form')
-const lockPassword = document.querySelector('#lock-password')
-const lockError = document.querySelector('#lock-error')
-const logoutBtn = document.querySelector('#logout-btn')
-const connStatus = document.querySelector('#conn-status')
+const lockScreen = $('#lock-screen')
+const appMain = $('#app-main')
+const lockForm = $('#lock-form')
+const lockPassword = $('#lock-password')
+const lockError = $('#lock-error')
 
-// --- env 読み込みデバッグ（Step A 用。値そのものは出さず先頭だけ） ---
+// ===================== env デバッグ / 接続テスト（手順A） =====================
 function logEnvDebug() {
   const url = import.meta.env.VITE_SUPABASE_URL
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -25,29 +27,19 @@ function logEnvDebug() {
   console.log('[env] anon key 形式 =', fmt, '/ 長さ =', key ? key.length : 0)
 }
 
-// --- 接続テスト（Step A） ---
-// PostgREST のルート(/rest/v1/)は anon では 401 になる仕様なので使わない。
-// supabase-js でクエリし「PostgREST から応答が返れば接続成功」と判定する。
 async function testSupabaseConnection() {
   const { error } = await supabase.from('__connection_test__').select('*').limit(1)
-
   if (!error) return true
 
   const code = (error.code || '').toString()
   const msg = (error.message || '').toLowerCase()
-
   const tableMissing =
-    code === 'PGRST205' ||
-    code === '42P01' ||
-    msg.includes('does not exist') ||
-    msg.includes('could not find the table')
+    code === 'PGRST205' || code === '42P01' ||
+    msg.includes('does not exist') || msg.includes('could not find the table')
   const authProblem =
-    code === '401' ||
-    code === 'PGRST301' ||
-    msg.includes('jwt') ||
-    msg.includes('invalid api key') ||
-    msg.includes('no api key') ||
-    msg.includes('unauthorized')
+    code === '401' || code === 'PGRST301' ||
+    msg.includes('jwt') || msg.includes('invalid api key') ||
+    msg.includes('no api key') || msg.includes('unauthorized')
 
   if (tableMissing) {
     console.log('Supabase connected（PostgREST 応答あり / テスト用テーブル未作成は想定内）', error)
@@ -62,18 +54,34 @@ async function testSupabaseConnection() {
 }
 
 async function runConnectionTest() {
-  connStatus.textContent = 'Supabase 接続確認中…'
+  const el = $('#conn-status')
+  if (!el) return
+  el.textContent = 'Supabase 接続確認中…'
   const ok = await testSupabaseConnection()
   if (ok) console.log('Supabase connected')
-  connStatus.textContent = ok
+  el.textContent = ok
     ? 'Supabase connected（コンソールを確認）'
     : 'Supabase 認証エラー（コンソールを確認）'
 }
 
-// --- 画面遷移 ---
+// ===================== ルーティング（ページ切替） =====================
+function showPage(name) {
+  $$('.page').forEach((p) => p.classList.toggle('active', p.id === `page-${name}`))
+  $$('[data-page]').forEach((b) => b.classList.toggle('active', b.dataset.page === name))
+}
+
+// ===================== 店舗切替（§8） =====================
+function renderStore() {
+  const cur = getStore()
+  $$('[data-store-btn]').forEach((b) => b.classList.toggle('active', b.dataset.storeBtn === cur))
+}
+
+// ===================== 画面遷移（ロック/本体） =====================
 function showApp() {
   lockScreen.hidden = true
   appMain.hidden = false
+  renderStore()
+  showPage('dashboard')
   runConnectionTest()
 }
 
@@ -85,7 +93,7 @@ function showLock() {
   setTimeout(() => lockPassword.focus(), 0)
 }
 
-// --- イベント ---
+// ===================== イベント =====================
 lockForm.addEventListener('submit', (e) => {
   e.preventDefault()
   if (tryUnlock(lockPassword.value)) {
@@ -97,15 +105,27 @@ lockForm.addEventListener('submit', (e) => {
   }
 })
 
-logoutBtn.addEventListener('click', () => {
-  lock()
-  showLock()
+// 本体内のクリックを委譲（ナビ / 店舗切替 / ログアウト）
+appMain.addEventListener('click', (e) => {
+  const navBtn = e.target.closest('[data-page]')
+  if (navBtn) {
+    showPage(navBtn.dataset.page)
+    return
+  }
+  const storeBtn = e.target.closest('[data-store-btn]')
+  if (storeBtn) {
+    setStore(storeBtn.dataset.storeBtn)
+    renderStore()
+    console.log('[store] 切替 →', getStore())
+    return
+  }
+  if (e.target.closest('.logout-link')) {
+    lock()
+    showLock()
+  }
 })
 
-// --- 起動 ---
+// ===================== 起動 =====================
 logEnvDebug()
-if (isUnlocked()) {
-  showApp()
-} else {
-  showLock()
-}
+if (isUnlocked()) showApp()
+else showLock()

@@ -1,30 +1,50 @@
-/* 手順2 時点の最小スタイル。フルデザイン（D=パステル）は手順3で適用予定。
-   パレットは CLAUDE.md §10.2 を先取りした暫定値。 */
+/* ============================================================
+   bar-kanri — D（パステル可愛い）デザインシステム / 共通レイアウト
+   CLAUDE.md §10 準拠。「韓国のカフェアプリ」系のやわらかい印象。
+   ============================================================ */
 :root {
   --bg: #fff5fa;
+  --bg-alt: #fbeff8;
   --bg-card: #ffffff;
   --text: #5b4a63;
   --text-sub: #a99bb0;
+  --text-muted: #c5b9cc;
   --accent: #e79bc4;
   --accent-dark: #d173a6;
-  --border: rgba(200, 150, 200, 0.22);
+  --accent-bg: #fceaf4;
+  --green: #7fcbb6;
+  --green-dark: #4fa98f;
+  --red: #f2a6bd;
   --red-dark: #d6708e;
+  --blue: #a9c0ee;
+  --purple: #a87fcb;
+  --border: rgba(200, 150, 200, 0.18);
+  --border-strong: rgba(200, 150, 200, 0.28);
+  --shadow-card: 0 8px 24px rgba(231, 155, 196, 0.18);
+  --shadow-soft: 0 4px 14px rgba(231, 155, 196, 0.12);
 }
 
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  font-family: "M PLUS Rounded 1c", -apple-system, BlinkMacSystemFont,
-    "Hiragino Sans", "Noto Sans JP", sans-serif;
-  color: var(--text);
-  background: var(--bg);
-  min-height: 100vh;
-}
-
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
 
-/* --- ロック画面 --- */
+body {
+  font-family: "M PLUS Rounded 1c", -apple-system, BlinkMacSystemFont,
+    "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-weight: 500;
+  color: var(--text);
+  min-height: 100vh;
+  background-color: var(--bg);
+  /* 薄いドット＋パステルグラデ（§10.3） */
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(231, 155, 196, 0.12) 0, transparent 42%),
+    radial-gradient(circle at 86% 4%, rgba(180, 160, 235, 0.12) 0, transparent 42%),
+    radial-gradient(rgba(231, 155, 196, 0.16) 1.4px, transparent 1.5px);
+  background-size: auto, auto, 22px 22px;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===================== ロック画面 ===================== */
 #lock-screen {
   min-height: 100vh;
   display: flex;
@@ -32,88 +52,144 @@ body {
   justify-content: center;
   padding: 24px;
 }
-
 #lock-form {
   width: 100%;
   max-width: 340px;
   background: var(--bg-card);
-  border-radius: 26px;
-  box-shadow: 0 8px 24px rgba(231, 155, 196, 0.18);
-  padding: 36px 28px;
+  border-radius: 28px;
+  box-shadow: var(--shadow-card);
+  padding: 38px 28px;
   text-align: center;
 }
-
-#lock-form h1 {
-  font-size: 22px;
-  font-weight: 800;
-  margin: 0 0 6px;
-}
-
-#lock-form .sub {
-  font-size: 13px;
-  color: var(--text-sub);
-  margin: 0 0 24px;
-}
-
+#lock-form h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+#lock-form .sub { font-size: 13px; color: var(--text-sub); margin-bottom: 24px; }
 #lock-password {
-  width: 100%;
-  padding: 14px 16px;
-  font-size: 16px;
-  border: 2px solid var(--border);
-  border-radius: 18px;
-  outline: none;
-  font-family: inherit;
-  color: var(--text);
+  width: 100%; padding: 14px 16px; font-size: 16px; font-family: inherit;
+  color: var(--text); border: 2px solid var(--border-strong);
+  border-radius: 18px; outline: none;
 }
 #lock-password:focus { border-color: var(--accent); }
+#lock-error { margin-top: 14px; font-size: 13px; color: var(--red-dark); }
 
-#lock-form button {
-  width: 100%;
-  margin-top: 14px;
-  padding: 14px 16px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #fff;
-  background: var(--accent);
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
-  font-family: inherit;
+/* ===================== ボタン（pill / §10.3） ===================== */
+.btn {
+  font-family: inherit; font-weight: 700; font-size: 15px;
+  padding: 14px 20px; border-radius: 999px; border: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
-#lock-form button:hover { background: var(--accent-dark); }
-#lock-form button:active { transform: scale(0.99); }
+.btn:active { transform: scale(0.99); }
+.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 6px 18px rgba(231, 155, 196, 0.45); }
+.btn-primary:hover { background: var(--accent-dark); box-shadow: 0 8px 26px rgba(231, 155, 196, 0.65); }
+.btn-block { width: 100%; }
+#lock-form button { width: 100%; margin-top: 14px; }
+.logout-link {
+  font-family: inherit; font-weight: 700; font-size: 13px; cursor: pointer;
+  color: var(--accent-dark); background: transparent;
+  border: 2px solid var(--border-strong); border-radius: 999px; padding: 8px 16px;
+}
+.logout-link:hover { border-color: var(--accent); }
 
-#lock-error {
-  margin: 14px 0 0;
-  font-size: 13px;
-  color: var(--red-dark);
+/* ===================== アプリ全体レイアウト ===================== */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* --- 店舗切替（セグメント / §8） --- */
+.store-switch {
+  display: inline-flex; background: var(--bg-alt); border-radius: 999px;
+  padding: 4px; gap: 2px;
+}
+.store-switch button {
+  font-family: inherit; font-weight: 700; font-size: 13px; cursor: pointer;
+  border: none; background: transparent; color: var(--text-sub);
+  padding: 8px 16px; border-radius: 999px; white-space: nowrap;
+}
+.store-switch button.active {
+  background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(231, 155, 196, 0.4);
+}
+.store-switch.sm button { padding: 6px 12px; font-size: 12px; }
+
+.brand { font-weight: 800; font-size: 17px; color: var(--text); }
+
+/* --- モバイルヘッダー --- */
+.mobile-header {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 12px 16px; background: rgba(255, 245, 250, 0.9);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--border);
+}
+.mobile-header .brand { font-size: 15px; }
+
+/* --- 本文 --- */
+.content { flex: 1; padding: 22px 16px 96px; width: 100%; }
+
+/* --- ページヘッダー --- */
+.page-header { margin-bottom: 22px; }
+.page-header .label {
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-muted); font-weight: 700; margin-bottom: 6px;
+}
+.page-header h1 { font-size: 26px; font-weight: 800; }
+
+/* --- カード --- */
+.card {
+  background: var(--bg-card); border-radius: 26px; padding: 24px;
+  box-shadow: var(--shadow-card); margin-bottom: 16px;
+}
+.card h2 { font-size: 17px; font-weight: 700; margin-bottom: 12px; }
+.muted { color: var(--text-sub); font-size: 14px; line-height: 1.7; }
+.placeholder-note {
+  margin-top: 12px; padding: 14px 16px; border-radius: 18px;
+  background: var(--accent-bg); color: var(--accent-dark);
+  font-size: 13px; font-weight: 700;
 }
 
-/* --- アプリ本体（手順2 時点はプレースホルダ） --- */
-#app-main { min-height: 100vh; }
+/* --- ページ表示切替 --- */
+.page { display: none; }
+.page.active { display: block; }
 
-#app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  background: var(--bg-card);
-  box-shadow: 0 2px 12px rgba(231, 155, 196, 0.12);
+/* ===================== ナビ（モバイル: 下タブ） ===================== */
+.tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  display: flex; background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 16px rgba(231, 155, 196, 0.12);
+  padding-bottom: env(safe-area-inset-bottom);
 }
-#app-header .brand { font-weight: 800; font-size: 16px; }
-
-#logout-btn {
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent-dark);
-  background: transparent;
-  border: 2px solid var(--border);
-  border-radius: 999px;
-  cursor: pointer;
-  font-family: inherit;
+.tabbar button {
+  flex: 1; background: none; border: none; cursor: pointer; font-family: inherit;
+  padding: 9px 0 8px; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--text-muted); font-size: 10px; font-weight: 700;
 }
-#logout-btn:hover { border-color: var(--accent); }
+.tabbar button .ic { font-size: 19px; line-height: 1; }
+.tabbar button.active { color: var(--accent-dark); }
 
-#app-content { padding: 28px 20px; }
-#conn-status { font-size: 14px; color: var(--text-sub); }
+/* ===================== サイドバー（デスクトップ） ===================== */
+.sidebar { display: none; }
+
+@media (min-width: 901px) {
+  .app { flex-direction: row; }
+  .mobile-header, .tabbar { display: none; }
+  .sidebar {
+    display: flex; flex-direction: column; width: 248px; flex-shrink: 0;
+    background: var(--bg-card); border-right: 1px solid var(--border);
+    padding: 26px 16px; position: sticky; top: 0; height: 100vh; gap: 8px;
+  }
+  .sidebar .brand { padding: 0 8px 6px; }
+  .sidebar .store-switch { width: 100%; margin-bottom: 14px; }
+  .sidebar .store-switch button { flex: 1; }
+  .nav { display: flex; flex-direction: column; gap: 4px; }
+  .nav-btn {
+    text-align: left; font-family: inherit; font-weight: 700; font-size: 14px;
+    background: none; border: none; cursor: pointer; color: var(--text-sub);
+    padding: 11px 14px; border-radius: 14px;
+  }
+  .nav-btn:hover { background: var(--bg-alt); color: var(--text); }
+  .nav-btn.active { background: var(--accent-bg); color: var(--accent-dark); }
+  .sidebar-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+  .content {
+    max-width: 760px; margin: 0 auto; padding: 56px 40px 80px;
+  }
+  .page-header h1 { font-size: 30px; }
+}
+
+/* デスクトップ以外ではサイドバー内ナビは隠す（モバイルは下タブ使用） */
+@media (max-width: 900px) { .nav { display: none; } }
