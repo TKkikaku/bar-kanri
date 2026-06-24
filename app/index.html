@@ -4,9 +4,39 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>bar-kanri（本番実装 / dev）</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300;500;700;800&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <div id="app">起動中…</div>
+  <!-- ロック画面（§3 単一パスワード） -->
+  <div id="lock-screen" hidden>
+    <form id="lock-form">
+      <h1>Bar 収支管理</h1>
+      <p class="sub">パスワードを入力してください</p>
+      <input
+        type="password"
+        id="lock-password"
+        autocomplete="current-password"
+        placeholder="パスワード"
+        aria-label="パスワード"
+      />
+      <button type="submit">ロック解除</button>
+      <p id="lock-error" hidden>パスワードが違います</p>
+    </form>
+  </div>
+
+  <!-- アプリ本体（解錠後に表示 / 手順2 時点はプレースホルダ） -->
+  <div id="app-main" hidden>
+    <header id="app-header">
+      <span class="brand">bar-kanri</span>
+      <button id="logout-btn" type="button">ログアウト</button>
+    </header>
+    <main id="app-content">
+      <p id="conn-status">Supabase 接続確認中…</p>
+    </main>
+  </div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

@@ -1,4 +1,15 @@
+import './style.css'
 import { supabase } from './supabase.js'
+import { isUnlocked, tryUnlock, lock } from './auth.js'
+
+// --- DOM ---
+const lockScreen = document.querySelector('#lock-screen')
+const appMain = document.querySelector('#app-main')
+const lockForm = document.querySelector('#lock-form')
+const lockPassword = document.querySelector('#lock-password')
+const lockError = document.querySelector('#lock-error')
+const logoutBtn = document.querySelector('#logout-btn')
+const connStatus = document.querySelector('#conn-status')
 
 // --- env 読み込みデバッグ（Step A 用。値そのものは出さず先頭だけ） ---
 function logEnvDebug() {
@@ -14,32 +25,22 @@ function logEnvDebug() {
   console.log('[env] anon key 形式 =', fmt, '/ 長さ =', key ? key.length : 0)
 }
 
-// --- 接続テスト ---
+// --- 接続テスト（Step A） ---
 // PostgREST のルート(/rest/v1/)は anon では 401 になる仕様なので使わない。
-// 代わりに supabase-js でクエリし、「PostgREST から応答が返れば接続成功」と判定する。
-// テスト用テーブルは未作成なので「テーブルが無い」エラー(PGRST205 / 42P01)は想定内＝connected。
+// supabase-js でクエリし「PostgREST から応答が返れば接続成功」と判定する。
 async function testSupabaseConnection() {
-  const { error } = await supabase
-    .from('__connection_test__')
-    .select('*')
-    .limit(1)
+  const { error } = await supabase.from('__connection_test__').select('*').limit(1)
 
-  if (!error) {
-    console.log('Supabase connected（クエリ成功）')
-    return true
-  }
+  if (!error) return true
 
   const code = (error.code || '').toString()
   const msg = (error.message || '').toLowerCase()
 
-  // PostgREST まで到達している＝接続OK（テーブル未作成は想定内）
   const tableMissing =
     code === 'PGRST205' ||
     code === '42P01' ||
     msg.includes('does not exist') ||
     msg.includes('could not find the table')
-
-  // anon キー不正・未認可（publishable key 誤用などはここ）
   const authProblem =
     code === '401' ||
     code === 'PGRST301' ||
@@ -56,20 +57,55 @@ async function testSupabaseConnection() {
     console.error('Supabase 認証エラー（anon キーを確認）:', error)
     return false
   }
-
-  // 構造化エラーが返っている時点で到達はしている → connected 扱い
   console.warn('Supabase 応答あり（判定は要確認）:', error)
   return true
 }
 
-logEnvDebug()
-console.log('bar-kanri dev 起動 / client:', !!supabase)
+async function runConnectionTest() {
+  connStatus.textContent = 'Supabase 接続確認中…'
+  const ok = await testSupabaseConnection()
+  if (ok) console.log('Supabase connected')
+  connStatus.textContent = ok
+    ? 'Supabase connected（コンソールを確認）'
+    : 'Supabase 認証エラー（コンソールを確認）'
+}
 
-testSupabaseConnection().then((ok) => {
-  const el = document.querySelector('#app')
-  if (el) {
-    el.textContent = ok
-      ? 'bar-kanri dev — Supabase connected（コンソールを確認）'
-      : 'bar-kanri dev — Supabase 認証エラー（コンソールを確認）'
+// --- 画面遷移 ---
+function showApp() {
+  lockScreen.hidden = true
+  appMain.hidden = false
+  runConnectionTest()
+}
+
+function showLock() {
+  appMain.hidden = true
+  lockScreen.hidden = false
+  lockError.hidden = true
+  lockPassword.value = ''
+  setTimeout(() => lockPassword.focus(), 0)
+}
+
+// --- イベント ---
+lockForm.addEventListener('submit', (e) => {
+  e.preventDefault()
+  if (tryUnlock(lockPassword.value)) {
+    lockError.hidden = true
+    showApp()
+  } else {
+    lockError.hidden = false
+    lockPassword.select()
   }
 })
+
+logoutBtn.addEventListener('click', () => {
+  lock()
+  showLock()
+})
+
+// --- 起動 ---
+logEnvDebug()
+if (isUnlocked()) {
+  showApp()
+} else {
+  showLock()
+}

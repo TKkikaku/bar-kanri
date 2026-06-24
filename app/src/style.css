@@ -1,0 +1,119 @@
+/* 手順2 時点の最小スタイル。フルデザイン（D=パステル）は手順3で適用予定。
+   パレットは CLAUDE.md §10.2 を先取りした暫定値。 */
+:root {
+  --bg: #fff5fa;
+  --bg-card: #ffffff;
+  --text: #5b4a63;
+  --text-sub: #a99bb0;
+  --accent: #e79bc4;
+  --accent-dark: #d173a6;
+  --border: rgba(200, 150, 200, 0.22);
+  --red-dark: #d6708e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "M PLUS Rounded 1c", -apple-system, BlinkMacSystemFont,
+    "Hiragino Sans", "Noto Sans JP", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+[hidden] { display: none !important; }
+
+/* --- ロック画面 --- */
+#lock-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#lock-form {
+  width: 100%;
+  max-width: 340px;
+  background: var(--bg-card);
+  border-radius: 26px;
+  box-shadow: 0 8px 24px rgba(231, 155, 196, 0.18);
+  padding: 36px 28px;
+  text-align: center;
+}
+
+#lock-form h1 {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 6px;
+}
+
+#lock-form .sub {
+  font-size: 13px;
+  color: var(--text-sub);
+  margin: 0 0 24px;
+}
+
+#lock-password {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  outline: none;
+  font-family: inherit;
+  color: var(--text);
+}
+#lock-password:focus { border-color: var(--accent); }
+
+#lock-form button {
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+}
+#lock-form button:hover { background: var(--accent-dark); }
+#lock-form button:active { transform: scale(0.99); }
+
+#lock-error {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--red-dark);
+}
+
+/* --- アプリ本体（手順2 時点はプレースホルダ） --- */
+#app-main { min-height: 100vh; }
+
+#app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  box-shadow: 0 2px 12px rgba(231, 155, 196, 0.12);
+}
+#app-header .brand { font-weight: 800; font-size: 16px; }
+
+#logout-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-dark);
+  background: transparent;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+}
+#logout-btn:hover { border-color: var(--accent); }
+
+#app-content { padding: 28px 20px; }
+#conn-status { font-size: 14px; color: var(--text-sub); }
