@@ -66,6 +66,18 @@ function aggregateStaff(sales) {
   return [...map.values()].sort((x, y) => y.sales - x.sales)
 }
 
+// 担当別バック累計（is_auto_back を related_sale_id 経由で担当に紐づけ）
+function backByStaff(sales, autoBacks) {
+  const saleToStaff = new Map()
+  sales.forEach((s) => saleToStaff.set(s.id, s.staff_member_id))
+  const m = new Map()
+  autoBacks.forEach((b) => {
+    const sid = saleToStaff.get(b.related_sale_id)
+    if (sid) m.set(sid, (m.get(sid) || 0) + (b.amount || 0))
+  })
+  return m
+}
+
 export async function loadSummary() {
   if (!inited) return
   $('#sum-month-label').textContent = fmtMonth(month)
@@ -104,6 +116,10 @@ export async function loadSummary() {
 
     // 担当別集計
     const staff = aggregateStaff(sales)
+    // 担当別バック累計（fetch済みの支出からバック自動計上を抽出して紐づけ）
+    const bmap = backByStaff(sales, expenses.filter((e) => e.is_auto_back))
+    staff.forEach((s) => (s.back = bmap.get(s.id) || 0))
+
     const staffHtml = staff.length
       ? '<div class="staff-grid">' +
         staff
@@ -118,6 +134,7 @@ export async function loadSummary() {
             <div class="sc-cell"><span class="sc-k">組数</span><span class="sc-v">${s.groups}</span></div>
             <div class="sc-cell"><span class="sc-k">指名ドリンク</span><span class="sc-v">${s.drinks}</span></div>
           </div>
+          ${s.is_free ? '' : `<div class="sc-back"><span class="sc-k">バック</span><span class="sc-back-v">${yen(s.back)}</span></div>`}
           <div class="sc-ages"><span class="sc-k">客層</span> ${esc(agesText(s.ages))}</div>
         </div>`
           )
@@ -219,10 +236,10 @@ export async function printReport() {
     ? r.staff
         .map(
           (s) =>
-            `<tr><td>${esc(s.name)}${s.is_free ? '（フリー）' : ''}</td><td class="num">${yen(s.sales)}</td><td class="num">${s.groups}</td><td class="num">${s.drinks}</td></tr>`
+            `<tr><td>${esc(s.name)}${s.is_free ? '（フリー）' : ''}</td><td class="num">${yen(s.sales)}</td><td class="num">${s.groups}</td><td class="num">${s.drinks}</td><td class="num">${yen(s.back || 0)}</td></tr>`
         )
         .join('')
-    : '<tr><td colspan="4">売上記録がありません</td></tr>'
+    : '<tr><td colspan="5">売上記録がありません</td></tr>'
 
   const catRows = r.catEntries.length
     ? r.catEntries.map((c) => `<tr><td>${esc(c.label)}</td><td class="num">${yen(c.value)}</td></tr>`).join('')
@@ -249,7 +266,7 @@ export async function printReport() {
 
     <h2 class="pr-h2">担当別 売上一覧</h2>
     <table class="pr-table">
-      <tr><th>担当</th><th class="num">売上</th><th class="num">組数</th><th class="num">指名ドリンク</th></tr>
+      <tr><th>担当</th><th class="num">売上</th><th class="num">組数</th><th class="num">指名ドリンク</th><th class="num">バック</th></tr>
       ${staffRows}
     </table>
 

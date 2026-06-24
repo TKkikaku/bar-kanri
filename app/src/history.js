@@ -4,7 +4,11 @@ const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
 
 let inited = false
-let month = new Date().toISOString().slice(0, 7) // YYYY-MM
+// 既定は当月（ローカル日付基準。dashboard/summary/input と統一）
+let month = (() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+})()
 let filter = 'all' // all | sale | expense
 
 const WD = ['日', '月', '火', '水', '木', '金', '土']

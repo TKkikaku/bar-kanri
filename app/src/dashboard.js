@@ -1,4 +1,4 @@
-import { fetchSalesRange } from './db.js'
+import { fetchSalesRange, fetchAutoBackRange } from './db.js'
 
 const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
@@ -54,7 +54,8 @@ function renderMvp(monthRows) {
       const has = w && w[c.metric] > 0
       return `
       <div class="mvp-card">
-        <div class="mvp-label">${c.icon} ${c.label}</div>
+        <div class="mvp-ic">${c.icon}</div>
+        <div class="mvp-label">${c.label}</div>
         <div class="mvp-name">${has ? esc(w.name) : '—'}</div>
         <div class="mvp-value">${has ? c.fmt(w[c.metric]) : '—'}</div>
       </div>`
@@ -101,6 +102,18 @@ function agesText(ages) {
   return ent.map(([t, c]) => `${t}${c > 1 ? '×' + c : ''}`).join(' / ')
 }
 
+// 担当別バック累計（daily_expenses.is_auto_back を related_sale_id 経由で担当に紐づけ）
+function backByStaff(sales, autoBacks) {
+  const saleToStaff = new Map()
+  sales.forEach((s) => saleToStaff.set(s.id, s.staff_member_id))
+  const m = new Map()
+  autoBacks.forEach((b) => {
+    const sid = saleToStaff.get(b.related_sale_id)
+    if (sid) m.set(sid, (m.get(sid) || 0) + (b.amount || 0))
+  })
+  return m
+}
+
 export async function loadDashboard() {
   if (!inited) return
   const label = period === 'today' ? '今日' : '今月'
@@ -112,12 +125,17 @@ export async function loadDashboard() {
 
   try {
     const mb = monthBoundsNow()
-    const rows = await fetchSalesRange(start, next)
+    const [rows, autoBacks] = await Promise.all([
+      fetchSalesRange(start, next),
+      fetchAutoBackRange(start, next),
+    ])
     // MVP は常に「今月」固定（期間タブと独立）
     const monthRows = period === 'month' ? rows : await fetchSalesRange(mb.start, mb.next)
     renderMvp(monthRows)
 
     const { staff, totalSales, totalGroups } = aggregate(rows)
+    const bmap = backByStaff(rows, autoBacks)
+    staff.forEach((s) => (s.back = bmap.get(s.id) || 0))
 
     sumBox.innerHTML =
       `<div class="dash-stat"><div class="ds-k">${label}の売上</div><div class="ds-v">${yen(totalSales)}</div></div>` +
@@ -140,6 +158,7 @@ export async function loadDashboard() {
           <div class="sc-cell"><span class="sc-k">組数</span><span class="sc-v">${s.groups}</span></div>
           <div class="sc-cell"><span class="sc-k">指名ドリンク</span><span class="sc-v">${s.drinks}</span></div>
         </div>
+        ${s.is_free ? '' : `<div class="sc-back"><span class="sc-k">バック</span><span class="sc-back-v">${yen(s.back)}</span></div>`}
         <div class="sc-ages"><span class="sc-k">客層</span> ${esc(agesText(s.ages))}</div>
       </div>`
       )

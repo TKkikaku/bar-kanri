@@ -122,6 +122,23 @@ export async function fetchSalesByMonth(month) {
   return fetchSalesRange(start, next)
 }
 
+// 指定範囲・現在店舗のバック自動計上（担当別バック累計の集計用）
+// related_sale_id 経由で「どの担当のバックか」を後段で紐づける。
+export async function fetchAutoBackRange(start, next) {
+  const store = getStore()
+  return paginate((from, to) =>
+    supabase
+      .from('daily_expenses')
+      .select('amount, related_sale_id')
+      .eq('store', store)
+      .eq('is_auto_back', true)
+      .gte('date', start)
+      .lt('date', next)
+      .order('related_sale_id', { ascending: true })
+      .range(from, to)
+  )
+}
+
 // 指定月・現在店舗の支出（バック自動計上行を含む）
 export async function fetchExpensesByMonth(month) {
   const store = getStore()

@@ -240,12 +240,17 @@ body {
 .mvp-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
 .mvp-card {
   background: linear-gradient(135deg, #fce0ef 0%, #efe1fa 100%);
-  border-radius: 20px; padding: 14px 10px; text-align: center;
+  border-radius: 20px; padding: 20px 12px; text-align: center;
   box-shadow: 0 6px 16px rgba(231, 155, 196, 0.18);
 }
-.mvp-label { font-size: 10.5px; font-weight: 800; color: var(--accent-dark); margin-bottom: 8px; }
-.mvp-name { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 3px; line-height: 1.2; }
-.mvp-value { font-size: 13px; font-weight: 800; color: var(--purple); }
+/* 絵文字を大きく上に → ラベル小 → 名前大 → 数値中 の縦並び */
+.mvp-ic { font-size: 30px; line-height: 1; margin-bottom: 8px; }
+.mvp-label { font-size: 11px; font-weight: 500; color: var(--text-sub); margin-bottom: 8px; }
+.mvp-name {
+  font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 5px; line-height: 1.15;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mvp-value { font-size: 16px; font-weight: 600; color: var(--text); }
 
 /* ===================== ダッシュボード（手順6） ===================== */
 .dash-summary { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-bottom: 18px; }
@@ -270,9 +275,10 @@ body {
 .staff-card .sc-head {
   display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px;
 }
-.staff-card .sc-name { font-size: 14px; font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 担当名を主役に（売上金額より大きく・くっきり） */
+.staff-card .sc-name { font-size: 18px; font-weight: 800; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .staff-card .sc-name .badge { vertical-align: middle; }
-.staff-card .sc-sales { font-size: 16px; font-weight: 800; color: var(--green-dark); white-space: nowrap; }
+.staff-card .sc-sales { font-size: 14px; font-weight: 700; color: var(--green-dark); white-space: nowrap; }
 .staff-card .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
 .staff-card .sc-cell {
   background: var(--bg-alt); border-radius: 12px; padding: 7px 8px;
@@ -282,6 +288,13 @@ body {
 .staff-card .sc-v { font-size: 14px; font-weight: 800; }
 .staff-card .sc-ages { font-size: 11.5px; font-weight: 700; color: var(--text-sub); line-height: 1.4; }
 .staff-card .sc-ages .sc-k { margin-right: 4px; }
+/* バック累計（給料計算用・アクセントで強調） */
+.staff-card .sc-back {
+  display: flex; justify-content: space-between; align-items: baseline;
+  background: var(--accent-bg); border-radius: 12px; padding: 7px 10px; margin-bottom: 8px;
+}
+.staff-card .sc-back .sc-k { color: var(--accent-dark); }
+.staff-card .sc-back-v { font-size: 14px; font-weight: 800; color: var(--accent-dark); }
 
 /* ===================== 集計（手順7） ===================== */
 .sum-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
