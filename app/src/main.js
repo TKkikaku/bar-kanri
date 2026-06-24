@@ -5,6 +5,7 @@ import { initInput } from './input.js'
 import { initHistory, loadHistory } from './history.js'
 import { initDashboard, loadDashboard } from './dashboard.js'
 import { initSummary, loadSummary } from './summary.js'
+import { initSettings, loadSettings, loadGoalField } from './settings.js'
 
 const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
@@ -37,6 +38,7 @@ function showPage(name) {
   if (name === 'dashboard') loadDashboard()
   if (name === 'history') loadHistory()
   if (name === 'summary') loadSummary()
+  if (name === 'settings') loadSettings()
 }
 
 // ===================== 店舗切替（§8） =====================
@@ -54,6 +56,7 @@ function showApp() {
   initHistory()
   initDashboard()
   initSummary()
+  initSettings()
   showPage('dashboard')
 }
 
@@ -93,6 +96,8 @@ appMain.addEventListener('click', (e) => {
     if ($('#page-dashboard').classList.contains('active')) loadDashboard()
     if ($('#page-history').classList.contains('active')) loadHistory()
     if ($('#page-summary').classList.contains('active')) loadSummary()
+    // 月次目標は店舗別なので、設定表示中なら目標欄を更新
+    if ($('#page-settings').classList.contains('active')) loadGoalField()
     return
   }
   if (e.target.closest('.logout-link')) {

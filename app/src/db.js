@@ -139,6 +139,47 @@ export async function fetchExpensesByMonth(month) {
   )
 }
 
+// スタッフ追加（手入力は常に非フリー）
+export async function addStaff(name) {
+  const { data, error } = await supabase
+    .from('staff_members')
+    .insert({ name, is_free: false })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+// スタッフ名の更新
+export async function updateStaff(id, name) {
+  const { error } = await supabase.from('staff_members').update({ name }).eq('id', id)
+  if (error) throw error
+}
+
+// スタッフ削除（フリーはフロントでガード。売上参照があるとFKでエラー）
+export async function deleteStaff(id) {
+  const { error } = await supabase.from('staff_members').delete().eq('id', id)
+  if (error) throw error
+}
+
+// バック設定の更新（単一行 id=1）
+export async function updateSettings({ sales_rate, drink_unit }) {
+  const { error } = await supabase
+    .from('app_settings')
+    .update({ sales_rate, drink_unit })
+    .eq('id', 1)
+  if (error) throw error
+}
+
+// 月次目標の登録/更新（store+month で upsert）
+export async function upsertGoal(month, target) {
+  const store = getStore()
+  const { error } = await supabase
+    .from('monthly_goals')
+    .upsert({ store, month, target }, { onConflict: 'store,month' })
+  if (error) throw error
+}
+
 // 月次目標（現在店舗・指定月）。未設定なら null。
 export async function fetchGoal(month) {
   const store = getStore()

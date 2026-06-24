@@ -62,6 +62,8 @@
     <main class="content">
       <section id="page-dashboard" class="page active">
         <div class="page-header"><div class="label">Dashboard</div><h1>ダッシュボード</h1></div>
+        <div class="mvp-title">今月のMVP</div>
+        <div class="mvp-row" id="dash-mvp"></div>
         <div class="tabs" id="dash-period">
           <button type="button" class="tab active" data-period="today">今日</button>
           <button type="button" class="tab" data-period="month">今月</button>
@@ -143,10 +145,48 @@
       <section id="page-settings" class="page">
         <div class="page-header"><div class="label">Settings</div><h1>設定</h1></div>
         <div class="card">
-          <h2>設定</h2>
-          <p class="muted">スタッフ管理（「フリー」は削除不可）/ バック率・ドリンク単価 / 月次目標 / 店舗切替。</p>
-          <div class="placeholder-note">この画面は手順8で実装します</div>
+          <h2>スタッフ管理</h2>
+          <div class="staff-add">
+            <input type="text" id="staff-new" placeholder="スタッフ名">
+            <button type="button" id="staff-add-btn" class="btn btn-primary">追加</button>
+          </div>
+          <div id="staff-list"></div>
+          <p class="form-msg" id="staff-msg" hidden></p>
         </div>
+
+        <div class="card">
+          <h2>バック設定</h2>
+          <div class="form">
+            <label class="field"><span class="field-label">売上バック率（%）</span>
+              <input type="number" id="set-rate" min="0" max="100" step="0.1"></label>
+            <label class="field"><span class="field-label">ドリンクバック単価（円/杯）</span>
+              <input type="number" id="set-unit" min="0" inputmode="numeric"></label>
+            <button type="button" id="set-save" class="btn btn-primary btn-block">保存</button>
+            <p class="form-msg" id="set-msg" hidden></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>月次目標</h2>
+          <div class="form">
+            <label class="field"><span class="field-label">対象月</span>
+              <input type="month" id="goal-month"></label>
+            <label class="field"><span class="field-label">目標売上（円）</span>
+              <input type="number" id="goal-target" min="0" inputmode="numeric" placeholder="例: 1500000"></label>
+            <button type="button" id="goal-save" class="btn btn-primary btn-block">保存</button>
+            <p class="form-msg" id="goal-msg" hidden></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>店舗</h2>
+          <p class="muted" style="margin-bottom:12px;">表示・登録の対象店舗を切り替えます。</p>
+          <div class="store-switch" data-store-switch>
+            <button type="button" data-store-btn="スタンド">スタンド</button>
+            <button type="button" data-store-btn="サンライズ">サンライズ</button>
+          </div>
+        </div>
+
         <div class="card">
           <h2>シフト機能</h2>
           <p class="muted">将来実装予定（今回スコープ外・別案件）。</p>

@@ -235,6 +235,18 @@ body {
 .badge.expense { background: rgba(242, 166, 189, 0.18); color: var(--red-dark); }
 .badge.auto { background: var(--accent-bg); color: var(--accent-dark); }
 
+/* ===================== 今月のMVP（手順9） ===================== */
+.mvp-title { font-size: 12px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; letter-spacing: 0.04em; }
+.mvp-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+.mvp-card {
+  background: linear-gradient(135deg, #fce0ef 0%, #efe1fa 100%);
+  border-radius: 20px; padding: 14px 10px; text-align: center;
+  box-shadow: 0 6px 16px rgba(231, 155, 196, 0.18);
+}
+.mvp-label { font-size: 10.5px; font-weight: 800; color: var(--accent-dark); margin-bottom: 8px; }
+.mvp-name { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 3px; line-height: 1.2; }
+.mvp-value { font-size: 13px; font-weight: 800; color: var(--purple); }
+
 /* ===================== ダッシュボード（手順6） ===================== */
 .dash-summary { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-bottom: 18px; }
 .dash-stat {
@@ -289,6 +301,31 @@ body {
 .bd-bar.lg { height: 12px; }
 .bd-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--purple)); }
 .bd-fill.done { background: linear-gradient(90deg, var(--green), var(--green-dark)); }
+
+/* ===================== 設定（手順8） ===================== */
+.staff-add { display: flex; gap: 8px; margin-bottom: 14px; }
+.staff-add input {
+  flex: 1; padding: 12px 14px; font-size: 16px; font-family: inherit; color: var(--text);
+  background: #fff; border: 2px solid var(--border-strong); border-radius: 16px; outline: none;
+}
+.staff-add input:focus { border-color: var(--accent); }
+.staff-add .btn { white-space: nowrap; padding: 12px 18px; }
+
+.staff-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.staff-row:last-child { border-bottom: none; }
+.staff-row .staff-name {
+  flex: 1; min-width: 0; padding: 9px 12px; font-size: 15px; font-family: inherit; color: var(--text);
+  background: #fff; border: 2px solid var(--border-strong); border-radius: 14px; outline: none;
+}
+.staff-row .staff-name:focus { border-color: var(--accent); }
+.btn-mini {
+  font-family: inherit; font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap;
+  padding: 8px 12px; border-radius: 999px; border: 2px solid var(--border-strong);
+  background: #fff; color: var(--accent-dark);
+}
+.btn-mini:hover { border-color: var(--accent); }
+.btn-mini.danger { color: var(--red-dark); }
+.btn-mini.danger:hover { border-color: var(--red); }
 
 /* ===================== ナビ（モバイル: 下タブ） ===================== */
 .tabbar {

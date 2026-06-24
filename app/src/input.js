@@ -153,6 +153,18 @@ async function handleExpenseSubmit(e) {
   }
 }
 
+// 設定タブでスタッフ/バック設定を変更した後に、入力画面のマスタを再読込
+export async function reloadInputMasters() {
+  if (!inited) return
+  try {
+    ;[staffList, settings] = await Promise.all([fetchStaff(), fetchSettings()])
+    renderStaffOptions()
+    updateBackPreview()
+  } catch (err) {
+    console.error('入力マスタの再読込に失敗:', err)
+  }
+}
+
 export async function initInput() {
   if (inited) return
   inited = true

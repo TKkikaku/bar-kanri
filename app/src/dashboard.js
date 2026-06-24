@@ -16,6 +16,14 @@ const esc = (s) =>
 const ymd = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
+function monthBoundsNow() {
+  const now = new Date()
+  return {
+    start: ymd(new Date(now.getFullYear(), now.getMonth(), 1)),
+    next: ymd(new Date(now.getFullYear(), now.getMonth() + 1, 1)),
+  }
+}
+
 function bounds() {
   const now = new Date()
   if (period === 'today') {
@@ -23,10 +31,35 @@ function bounds() {
     const next = ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1))
     return { start, next }
   }
-  // 今月
-  const start = ymd(new Date(now.getFullYear(), now.getMonth(), 1))
-  const next = ymd(new Date(now.getFullYear(), now.getMonth() + 1, 1))
-  return { start, next }
+  return monthBoundsNow()
+}
+
+// 今月のMVP（フリー対象外・同率は id 先勝ち）を描画
+function renderMvp(monthRows) {
+  const staff = aggregate(monthRows).staff.filter((s) => !s.is_free)
+  // id 昇順で安定化 → 同率時は先頭（小さい id）が勝つ
+  const byId = [...staff].sort((a, b) => String(a.id).localeCompare(String(b.id)))
+  const pick = (metric) =>
+    byId.reduce((best, s) => (best === null || s[metric] > best[metric] ? s : best), null)
+
+  const cards = [
+    { icon: '💰', label: '売上MVP', metric: 'sales', fmt: (v) => yen(v) },
+    { icon: '👥', label: '組数MVP', metric: 'groups', fmt: (v) => `${v}組` },
+    { icon: '🍹', label: 'ドリンクMVP', metric: 'drinks', fmt: (v) => `${v}杯` },
+  ]
+
+  $('#dash-mvp').innerHTML = cards
+    .map((c) => {
+      const w = pick(c.metric)
+      const has = w && w[c.metric] > 0
+      return `
+      <div class="mvp-card">
+        <div class="mvp-label">${c.icon} ${c.label}</div>
+        <div class="mvp-name">${has ? esc(w.name) : '—'}</div>
+        <div class="mvp-value">${has ? c.fmt(w[c.metric]) : '—'}</div>
+      </div>`
+    })
+    .join('')
 }
 
 // 売上を担当別に集計（§9: 売上 / 組数 / 客層 / 指名ドリンク数）
@@ -78,7 +111,12 @@ export async function loadDashboard() {
   sumBox.innerHTML = ''
 
   try {
+    const mb = monthBoundsNow()
     const rows = await fetchSalesRange(start, next)
+    // MVP は常に「今月」固定（期間タブと独立）
+    const monthRows = period === 'month' ? rows : await fetchSalesRange(mb.start, mb.next)
+    renderMvp(monthRows)
+
     const { staff, totalSales, totalGroups } = aggregate(rows)
 
     sumBox.innerHTML =
