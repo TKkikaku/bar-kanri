@@ -73,9 +73,45 @@
       <section id="page-input" class="page">
         <div class="page-header"><div class="label">Input</div><h1>入力</h1></div>
         <div class="card">
-          <h2>売上入力 / 支出入力</h2>
-          <p class="muted">2 タブ構成。売上は担当・組数・客層・指名ドリンク数を含み、バックは自動計算します。</p>
-          <div class="placeholder-note">この画面は手順4で実装します</div>
+          <div class="tabs" id="input-tabs">
+            <button type="button" class="tab active" data-input-tab="sale">売上</button>
+            <button type="button" class="tab" data-input-tab="expense">支出</button>
+          </div>
+
+          <!-- 売上入力（§7.1） -->
+          <form id="form-sale" class="form" novalidate>
+            <label class="field"><span class="field-label">日付</span>
+              <input type="date" id="sale-date" required></label>
+            <label class="field"><span class="field-label">金額</span>
+              <input type="number" id="sale-amount" inputmode="numeric" min="0" placeholder="0" required></label>
+            <label class="field"><span class="field-label">担当スタッフ</span>
+              <select id="sale-staff" required></select></label>
+            <label class="field"><span class="field-label">組数</span>
+              <input type="number" id="sale-groups" inputmode="numeric" min="0" placeholder="0" required></label>
+            <div class="field"><span class="field-label">客層（複数選択可・任意）</span>
+              <div class="chips" id="sale-ages"></div></div>
+            <label class="field"><span class="field-label">指名ドリンク数</span>
+              <input type="number" id="sale-drinks" inputmode="numeric" min="0" value="0"></label>
+            <label class="field"><span class="field-label">メモ（任意）</span>
+              <input type="text" id="sale-memo" placeholder="例: 週末営業分"></label>
+            <div class="back-preview" id="sale-back-preview" hidden></div>
+            <button type="submit" class="btn btn-primary btn-block">売上を登録</button>
+            <p class="form-msg" id="sale-msg" hidden></p>
+          </form>
+
+          <!-- 支出入力（§7.2） -->
+          <form id="form-expense" class="form" novalidate hidden>
+            <label class="field"><span class="field-label">日付</span>
+              <input type="date" id="exp-date" required></label>
+            <label class="field"><span class="field-label">金額</span>
+              <input type="number" id="exp-amount" inputmode="numeric" min="0" placeholder="0" required></label>
+            <label class="field"><span class="field-label">カテゴリ</span>
+              <select id="exp-category" required></select></label>
+            <label class="field"><span class="field-label">メモ（任意）</span>
+              <input type="text" id="exp-memo" placeholder="例: 酒屋仕入れ"></label>
+            <button type="submit" class="btn btn-primary btn-block">支出を登録</button>
+            <p class="form-msg" id="exp-msg" hidden></p>
+          </form>
         </div>
       </section>
 

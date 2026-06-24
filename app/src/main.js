@@ -2,6 +2,7 @@ import './style.css'
 import { supabase } from './supabase.js'
 import { isUnlocked, tryUnlock, lock } from './auth.js'
 import { getStore, setStore } from './store.js'
+import { initInput } from './input.js'
 
 const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
@@ -83,6 +84,7 @@ function showApp() {
   renderStore()
   showPage('dashboard')
   runConnectionTest()
+  initInput()
 }
 
 function showLock() {

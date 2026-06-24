@@ -146,6 +146,59 @@ body {
 .page { display: none; }
 .page.active { display: block; }
 
+/* ===================== フォーム / 入力（手順4） ===================== */
+.tabs {
+  display: flex; background: var(--bg-alt); border-radius: 999px;
+  padding: 4px; gap: 2px; margin-bottom: 20px;
+}
+.tabs .tab {
+  flex: 1; font-family: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
+  border: none; background: transparent; color: var(--text-sub);
+  padding: 10px 14px; border-radius: 999px;
+}
+.tabs .tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(231, 155, 196, 0.4); }
+
+.form { display: flex; flex-direction: column; gap: 16px; }
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field-label { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+.form input[type="text"],
+.form input[type="number"],
+.form input[type="date"],
+.form select {
+  width: 100%; padding: 13px 15px; font-size: 16px; font-family: inherit;
+  color: var(--text); background: #fff; border: 2px solid var(--border-strong);
+  border-radius: 16px; outline: none; -webkit-appearance: none; appearance: none;
+}
+.form input:focus, .form select:focus { border-color: var(--accent); }
+.form select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23a99bb0' stroke-width='2' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 16px center; padding-right: 38px;
+}
+
+/* 客層チップ */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips .chip {
+  font-family: inherit; font-weight: 700; font-size: 13px; cursor: pointer;
+  padding: 9px 16px; border-radius: 999px; background: #fff;
+  border: 2px solid var(--border-strong); color: var(--text-sub);
+}
+.chips .chip.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent-dark); }
+
+/* バックプレビュー */
+.back-preview { background: var(--accent-bg); border-radius: 18px; padding: 16px 18px; }
+.back-preview .bp-title { font-size: 12px; font-weight: 800; color: var(--accent-dark); margin-bottom: 10px; }
+.back-preview .bp-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-sub); margin-bottom: 6px; font-weight: 700; }
+.back-preview .bp-total {
+  display: flex; justify-content: space-between; font-size: 15px; font-weight: 800;
+  color: var(--accent-dark); padding-top: 10px; margin-top: 8px;
+  border-top: 1px solid var(--border-strong);
+}
+
+/* フォームメッセージ */
+.form-msg { font-size: 13px; font-weight: 700; text-align: center; padding: 4px 0; }
+.form-msg.ok { color: var(--green-dark); }
+.form-msg.err { color: var(--red-dark); }
+
 /* ===================== ナビ（モバイル: 下タブ） ===================== */
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
