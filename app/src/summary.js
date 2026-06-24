@@ -105,7 +105,8 @@ export async function loadSummary() {
     // 担当別集計
     const staff = aggregateStaff(sales)
     const staffHtml = staff.length
-      ? staff
+      ? '<div class="staff-grid">' +
+        staff
           .map(
             (s) => `
         <div class="staff-card">
@@ -120,7 +121,8 @@ export async function loadSummary() {
           <div class="sc-ages"><span class="sc-k">客層</span> ${esc(agesText(s.ages))}</div>
         </div>`
           )
-          .join('')
+          .join('') +
+        '</div>'
       : '<p class="muted">売上記録がありません</p>'
 
     // 支出カテゴリ別（バック自動計上を含む）

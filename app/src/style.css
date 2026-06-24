@@ -257,24 +257,30 @@ body {
 .dash-stat .ds-v { font-size: 26px; font-weight: 800; color: #8e5bb0; }
 .dash-stat .ds-u { font-size: 14px; font-weight: 700; margin-left: 2px; }
 
+/* スタッフカードのグリッド（10名規模対応・手順11）
+   モバイル=1列(小型) / 560px以上=2列 / デスクトップ広め=3列 */
+.staff-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 560px) { .staff-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1180px) { .staff-grid { grid-template-columns: 1fr 1fr 1fr; } }
+
 .staff-card {
-  background: var(--bg-card); border-radius: 22px; padding: 18px 20px;
-  margin-bottom: 12px; box-shadow: var(--shadow-card);
+  background: var(--bg-card); border-radius: 16px; padding: 13px 15px;
+  box-shadow: var(--shadow-soft); min-width: 0;
 }
 .staff-card .sc-head {
-  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px;
 }
-.staff-card .sc-name { font-size: 16px; font-weight: 800; }
+.staff-card .sc-name { font-size: 14px; font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .staff-card .sc-name .badge { vertical-align: middle; }
-.staff-card .sc-sales { font-size: 19px; font-weight: 800; color: var(--green-dark); }
-.staff-card .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.staff-card .sc-sales { font-size: 16px; font-weight: 800; color: var(--green-dark); white-space: nowrap; }
+.staff-card .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
 .staff-card .sc-cell {
-  background: var(--bg-alt); border-radius: 16px; padding: 12px;
-  display: flex; flex-direction: column; gap: 4px; align-items: center;
+  background: var(--bg-alt); border-radius: 12px; padding: 7px 8px;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 6px;
 }
-.staff-card .sc-k { font-size: 11px; font-weight: 700; color: var(--text-sub); }
-.staff-card .sc-v { font-size: 18px; font-weight: 800; }
-.staff-card .sc-ages { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+.staff-card .sc-k { font-size: 10px; font-weight: 700; color: var(--text-sub); }
+.staff-card .sc-v { font-size: 14px; font-weight: 800; }
+.staff-card .sc-ages { font-size: 11.5px; font-weight: 700; color: var(--text-sub); line-height: 1.4; }
 .staff-card .sc-ages .sc-k { margin-right: 4px; }
 
 /* ===================== 集計（手順7） ===================== */
