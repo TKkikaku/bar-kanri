@@ -100,10 +100,9 @@ async function paginate(queryFn, pageSize = 1000) {
   return all
 }
 
-// 指定月・現在店舗の売上（担当名を埋め込み）
-export async function fetchSalesByMonth(month) {
+// 指定範囲 [start, next) ・現在店舗の売上（担当名を埋め込み）
+export async function fetchSalesRange(start, next) {
   const store = getStore()
-  const { start, next } = monthBounds(month)
   return paginate((from, to) =>
     supabase
       .from('daily_sales')
@@ -115,6 +114,12 @@ export async function fetchSalesByMonth(month) {
       .order('created_at', { ascending: false })
       .range(from, to)
   )
+}
+
+// 指定月・現在店舗の売上（担当名を埋め込み）
+export async function fetchSalesByMonth(month) {
+  const { start, next } = monthBounds(month)
+  return fetchSalesRange(start, next)
 }
 
 // 指定月・現在店舗の支出（バック自動計上行を含む）

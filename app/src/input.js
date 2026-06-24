@@ -9,7 +9,11 @@ let staffList = []
 let settings = { sales_rate: 0.1, drink_unit: 300 }
 
 const yen = (n) => '¥' + Number(n).toLocaleString('ja-JP')
-const today = () => new Date().toISOString().slice(0, 10)
+// ローカル日付 YYYY-MM-DD（ダッシュボードの「今日」と基準を合わせる）
+const today = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 function showMsg(el, text, kind) {
   el.textContent = text

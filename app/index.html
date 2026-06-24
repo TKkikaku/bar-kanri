@@ -62,12 +62,12 @@
     <main class="content">
       <section id="page-dashboard" class="page active">
         <div class="page-header"><div class="label">Dashboard</div><h1>ダッシュボード</h1></div>
-        <div class="card">
-          <h2>スタッフ別実績</h2>
-          <p class="muted">担当ごとの 売上 / 組数 / 客層 / 指名ドリンク数 を、今日・今月で表示します。</p>
-          <div class="placeholder-note">この画面は手順6で実装します</div>
-          <p id="conn-status" class="muted" style="margin-top:12px;">Supabase 接続確認中…</p>
+        <div class="tabs" id="dash-period">
+          <button type="button" class="tab active" data-period="today">今日</button>
+          <button type="button" class="tab" data-period="month">今月</button>
         </div>
+        <div class="dash-summary" id="dash-summary"></div>
+        <div id="dash-staff"></div>
       </section>
 
       <section id="page-input" class="page">

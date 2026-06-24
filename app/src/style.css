@@ -235,6 +235,36 @@ body {
 .badge.expense { background: rgba(242, 166, 189, 0.18); color: var(--red-dark); }
 .badge.auto { background: var(--accent-bg); color: var(--accent-dark); }
 
+/* ===================== ダッシュボード（手順6） ===================== */
+.dash-summary { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-bottom: 18px; }
+.dash-stat {
+  background: linear-gradient(135deg, #fbe0ee 0%, #eadff8 60%, #ddf3ec 100%);
+  border-radius: 24px; padding: 18px 20px;
+}
+.dash-stat .ds-k { font-size: 12px; font-weight: 700; color: var(--accent-dark); margin-bottom: 8px; }
+.dash-stat .ds-v { font-size: 26px; font-weight: 800; color: #8e5bb0; }
+.dash-stat .ds-u { font-size: 14px; font-weight: 700; margin-left: 2px; }
+
+.staff-card {
+  background: var(--bg-card); border-radius: 22px; padding: 18px 20px;
+  margin-bottom: 12px; box-shadow: var(--shadow-card);
+}
+.staff-card .sc-head {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+}
+.staff-card .sc-name { font-size: 16px; font-weight: 800; }
+.staff-card .sc-name .badge { vertical-align: middle; }
+.staff-card .sc-sales { font-size: 19px; font-weight: 800; color: var(--green-dark); }
+.staff-card .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.staff-card .sc-cell {
+  background: var(--bg-alt); border-radius: 16px; padding: 12px;
+  display: flex; flex-direction: column; gap: 4px; align-items: center;
+}
+.staff-card .sc-k { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+.staff-card .sc-v { font-size: 18px; font-weight: 800; }
+.staff-card .sc-ages { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+.staff-card .sc-ages .sc-k { margin-right: 4px; }
+
 /* ===================== ナビ（モバイル: 下タブ） ===================== */
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
