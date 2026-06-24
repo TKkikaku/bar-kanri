@@ -1,0 +1,13 @@
+# dependencies
+node_modules
+
+# build output
+dist
+
+# 環境変数（実際の接続情報・パスワードはコミットしない）
+.env.local
+.env.*.local
+
+# logs / OS
+*.log
+.DS_Store

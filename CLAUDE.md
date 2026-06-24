@@ -373,7 +373,8 @@ const STORES = ['スタンド', 'サンライズ'];
 |---|---|
 | `VITE_APP_PASSWORD` | アプリ全体ロックの単一パスワード |
 | `VITE_SUPABASE_URL` | Supabase プロジェクト URL |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon キー |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon キー（**Legacy anon key / JWT形式**を使う） |
 
 - Netlify の「Environment variables」に設定し、ビルド時に Vite が `import.meta.env.VITE_*` として埋め込む。
 - anon key・パスワードはクライアントバンドルに含まれる点に留意（Anonymous Access 前提のため許容。秘匿性の高い情報は置かない）。
+- ⚠️ **anon キーは Legacy anon key（`eyJ...` の JWT 形式）を使う。** 新形式の publishable key（`sb_publishable_*`）は `@supabase/supabase-js` のバージョンによっては未対応で **401 になる**（実際に発生）。publishable key が広く対応されるまでは Legacy anon key が確実。
