@@ -265,6 +265,31 @@ body {
 .staff-card .sc-ages { font-size: 13px; font-weight: 700; color: var(--text-sub); }
 .staff-card .sc-ages .sc-k { margin-right: 4px; }
 
+/* ===================== 集計（手順7） ===================== */
+.sum-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.sum-tile {
+  background: var(--bg-card); border-radius: 20px; padding: 16px 14px;
+  box-shadow: var(--shadow-soft); display: flex; flex-direction: column; gap: 6px;
+}
+.sum-tile .st-k { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+.sum-tile .st-v { font-size: 17px; font-weight: 800; }
+.sum-tile.income .st-v { color: var(--green-dark); }
+.sum-tile.expense .st-v { color: var(--red-dark); }
+.sum-tile.profit .st-v { color: var(--purple); }
+
+/* 目標達成バー */
+.goal-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.goal-head span:first-child { font-size: 22px; font-weight: 800; color: var(--accent-dark); }
+
+/* 内訳バー（支出カテゴリ別・客層・曜日別・日別） */
+.bd-row { margin-bottom: 12px; }
+.bd-row:last-child { margin-bottom: 0; }
+.bd-top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+.bd-bar { height: 8px; background: var(--bg-alt); border-radius: 999px; overflow: hidden; }
+.bd-bar.lg { height: 12px; }
+.bd-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--purple)); }
+.bd-fill.done { background: linear-gradient(90deg, var(--green), var(--green-dark)); }
+
 /* ===================== ナビ（モバイル: 下タブ） ===================== */
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;

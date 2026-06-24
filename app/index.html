@@ -132,11 +132,12 @@
 
       <section id="page-summary" class="page">
         <div class="page-header"><div class="label">Summary</div><h1>集計</h1></div>
-        <div class="card">
-          <h2>集計</h2>
-          <p class="muted">担当別集計を最優先。支出カテゴリ別の集計は表示します（支払い方法別・売上カテゴリ別・締めは無し）。</p>
-          <div class="placeholder-note">この画面は手順7で実装します</div>
+        <div class="month-nav">
+          <button type="button" id="sum-prev" aria-label="前の月">‹</button>
+          <span id="sum-month-label" class="month-label">—</span>
+          <button type="button" id="sum-next" aria-label="次の月">›</button>
         </div>
+        <div id="sum-body"></div>
       </section>
 
       <section id="page-settings" class="page">

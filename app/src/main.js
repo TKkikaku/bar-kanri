@@ -4,6 +4,7 @@ import { getStore, setStore } from './store.js'
 import { initInput } from './input.js'
 import { initHistory, loadHistory } from './history.js'
 import { initDashboard, loadDashboard } from './dashboard.js'
+import { initSummary, loadSummary } from './summary.js'
 
 const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
@@ -35,6 +36,7 @@ function showPage(name) {
   $$('[data-page]').forEach((b) => b.classList.toggle('active', b.dataset.page === name))
   if (name === 'dashboard') loadDashboard()
   if (name === 'history') loadHistory()
+  if (name === 'summary') loadSummary()
 }
 
 // ===================== 店舗切替（§8） =====================
@@ -51,6 +53,7 @@ function showApp() {
   initInput()
   initHistory()
   initDashboard()
+  initSummary()
   showPage('dashboard')
 }
 
@@ -89,6 +92,7 @@ appMain.addEventListener('click', (e) => {
     // 表示中の画面を店舗に合わせて更新
     if ($('#page-dashboard').classList.contains('active')) loadDashboard()
     if ($('#page-history').classList.contains('active')) loadHistory()
+    if ($('#page-summary').classList.contains('active')) loadSummary()
     return
   }
   if (e.target.closest('.logout-link')) {

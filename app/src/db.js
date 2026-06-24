@@ -139,6 +139,19 @@ export async function fetchExpensesByMonth(month) {
   )
 }
 
+// 月次目標（現在店舗・指定月）。未設定なら null。
+export async function fetchGoal(month) {
+  const store = getStore()
+  const { data, error } = await supabase
+    .from('monthly_goals')
+    .select('*')
+    .eq('store', store)
+    .eq('month', month)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
 // 支出を登録（§7.2）
 export async function addExpense(exp) {
   const store = getStore()
