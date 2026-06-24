@@ -327,6 +327,24 @@ body {
 .btn-mini.danger { color: var(--red-dark); }
 .btn-mini.danger:hover { border-color: var(--red); }
 
+/* ===================== PDF出力（print 方式・手順10） ===================== */
+#print-report { display: none; }
+.pr-h1 { font-size: 20px; margin-bottom: 4px; color: #333; }
+.pr-sub { font-size: 13px; color: #666; margin-bottom: 16px; }
+.pr-h2 { font-size: 14px; margin: 18px 0 8px; color: #333; border-bottom: 2px solid #e79bc4; padding-bottom: 4px; }
+.pr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pr-table th, .pr-table td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; color: #333; }
+.pr-table th { background: #fceaf4; font-weight: 700; white-space: nowrap; }
+.pr-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.pr-foot { margin-top: 20px; font-size: 10px; color: #999; }
+
+@media print {
+  body { background: #fff !important; }
+  #lock-screen, #app-main { display: none !important; }
+  #print-report { display: block !important; }
+  @page { margin: 14mm; }
+}
+
 /* ===================== ナビ（モバイル: 下タブ） ===================== */
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;

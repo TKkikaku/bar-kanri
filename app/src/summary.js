@@ -1,8 +1,10 @@
 import { fetchSalesByMonth, fetchExpensesByMonth, fetchGoal } from './db.js'
+import { getStore } from './store.js'
 
 const $ = (sel, root = document) => root.querySelector(sel)
 
 let inited = false
+let lastReport = null // PDF出力用に直近の集計結果を保持
 let month = (() => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -51,7 +53,7 @@ function aggregateStaff(sales) {
     const id = r.staff_member_id
     let a = map.get(id)
     if (!a) {
-      a = { name: r.staff?.name || '(担当不明)', is_free: !!r.staff?.is_free, sales: 0, groups: 0, drinks: 0, ages: {} }
+      a = { id, name: r.staff?.name || '(担当不明)', is_free: !!r.staff?.is_free, sales: 0, groups: 0, drinks: 0, ages: {} }
       map.set(id, a)
     }
     a.sales += r.amount || 0
@@ -171,10 +173,102 @@ export async function loadSummary() {
       `<div class="card"><h2>客層</h2>${ageHtml}</div>` +
       `<div class="card"><h2>曜日別 売上</h2>${wdHtml}</div>` +
       `<div class="card"><h2>日別 売上</h2>${dayHtml}</div>`
+
+    // PDF出力用に保持
+    lastReport = { store: getStore(), month, totalSales, totalExpense, profit, goal, staff, catEntries, mvp: pickMvp(staff) }
   } catch (err) {
     console.error('集計の取得に失敗:', err)
     root.innerHTML = `<p class="form-msg err">読み込みに失敗しました: ${esc(err.message || err)}</p>`
   }
+}
+
+// 今月のMVP（フリー対象外・同率は id 先勝ち）
+function pickMvp(staff) {
+  const nf = [...staff]
+    .filter((s) => !s.is_free)
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+  const pick = (m) => nf.reduce((best, s) => (best === null || s[m] > best[m] ? s : best), null)
+  return { sales: pick('sales'), groups: pick('groups'), drinks: pick('drinks') }
+}
+
+function stamp() {
+  const d = new Date()
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+// print 方式で月次レポートPDFを出力（§手順10）
+export async function printReport() {
+  if (!lastReport) await loadSummary()
+  const r = lastReport
+  if (!r) return
+  const el = $('#print-report')
+
+  const mvpCells = (w, metric, fmt) => {
+    const has = w && w[metric] > 0
+    return `<td>${has ? esc(w.name) : '—'}</td><td>${has ? fmt(w[metric]) : '—'}</td>`
+  }
+  const goalText =
+    r.goal && r.goal.target > 0
+      ? `${Math.round((r.totalSales / r.goal.target) * 100)}%（${yen(r.totalSales)} / ${yen(r.goal.target)}）`
+      : '目標未設定'
+
+  const staffRows = r.staff.length
+    ? r.staff
+        .map(
+          (s) =>
+            `<tr><td>${esc(s.name)}${s.is_free ? '（フリー）' : ''}</td><td class="num">${yen(s.sales)}</td><td class="num">${s.groups}</td><td class="num">${s.drinks}</td></tr>`
+        )
+        .join('')
+    : '<tr><td colspan="4">売上記録がありません</td></tr>'
+
+  const catRows = r.catEntries.length
+    ? r.catEntries.map((c) => `<tr><td>${esc(c.label)}</td><td class="num">${yen(c.value)}</td></tr>`).join('')
+    : '<tr><td colspan="2">支出がありません</td></tr>'
+
+  el.innerHTML = `
+    <h1 class="pr-h1">月次レポート</h1>
+    <div class="pr-sub">${esc(r.store)} ／ ${fmtMonth(r.month)}</div>
+
+    <h2 class="pr-h2">月次サマリ</h2>
+    <table class="pr-table">
+      <tr><th>売上</th><td class="num">${yen(r.totalSales)}</td></tr>
+      <tr><th>支出</th><td class="num">${yen(r.totalExpense)}</td></tr>
+      <tr><th>利益</th><td class="num">${yen(r.profit)}</td></tr>
+      <tr><th>目標達成率</th><td>${goalText}</td></tr>
+    </table>
+
+    <h2 class="pr-h2">今月のMVP</h2>
+    <table class="pr-table">
+      <tr><th>売上MVP</th>${mvpCells(r.mvp.sales, 'sales', yen)}</tr>
+      <tr><th>組数MVP</th>${mvpCells(r.mvp.groups, 'groups', (v) => v + '組')}</tr>
+      <tr><th>ドリンクMVP</th>${mvpCells(r.mvp.drinks, 'drinks', (v) => v + '杯')}</tr>
+    </table>
+
+    <h2 class="pr-h2">担当別 売上一覧</h2>
+    <table class="pr-table">
+      <tr><th>担当</th><th class="num">売上</th><th class="num">組数</th><th class="num">指名ドリンク</th></tr>
+      ${staffRows}
+    </table>
+
+    <h2 class="pr-h2">支出カテゴリ別内訳</h2>
+    <table class="pr-table">
+      <tr><th>カテゴリ</th><th class="num">金額</th></tr>
+      ${catRows}
+    </table>
+
+    <div class="pr-foot">出力日時: ${stamp()}　bar-kanri</div>
+  `
+
+  // 保存ダイアログの既定ファイル名を bar-kanri_{店舗}_{YYYY-MM} に
+  const prevTitle = document.title
+  document.title = `bar-kanri_${r.store}_${r.month}`
+  const restore = () => {
+    document.title = prevTitle
+    window.removeEventListener('afterprint', restore)
+  }
+  window.addEventListener('afterprint', restore)
+  window.print()
 }
 
 export function initSummary() {
@@ -188,4 +282,5 @@ export function initSummary() {
     shiftMonth(1)
     loadSummary()
   })
+  $('#sum-pdf').addEventListener('click', printReport)
 }
