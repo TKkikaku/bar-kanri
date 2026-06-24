@@ -1,0 +1,18 @@
+# Netlify ビルド設定
+# アプリは app/ サブディレクトリの Vite プロジェクト。
+# 環境変数（VITE_APP_PASSWORD / VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY）は
+# このファイルには書かず、Netlify ダッシュボードの「Environment variables」で設定する。
+
+[build]
+  base = "app"            # この中で npm install / build を実行
+  command = "npm run build"
+  publish = "dist"        # base からの相対 → app/dist
+
+[build.environment]
+  NODE_VERSION = "22"     # Vite 8 は Node 20.19+ / 22.12+ が必要
+
+# 単一HTMLアプリ向けフォールバック（直リンク時も index.html を返す）
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
