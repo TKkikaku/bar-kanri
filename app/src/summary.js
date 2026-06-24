@@ -216,8 +216,19 @@ function stamp() {
   return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
-// print 方式で月次レポートPDFを出力（§手順10）
+// 月次レポートPDFを出力（jsPDF + html2canvas / iOS Safari 対応・§手順10）
+// DOM をブラウザ描画 → 画像化 → PDF。日本語フォント同梱不要で任意の担当名にも対応。
 export async function printReport() {
+  const msg = $('#pdf-msg')
+  const btn = $('#sum-pdf')
+  const showErr = (t) => {
+    if (msg) {
+      msg.textContent = t
+      msg.className = 'form-msg err'
+      msg.hidden = false
+    }
+  }
+
   if (!lastReport) await loadSummary()
   const r = lastReport
   if (!r) return
@@ -279,15 +290,56 @@ export async function printReport() {
     <div class="pr-foot">出力日時: ${stamp()}　bar-kanri</div>
   `
 
-  // 保存ダイアログの既定ファイル名を bar-kanri_{店舗}_{YYYY-MM} に
-  const prevTitle = document.title
-  document.title = `bar-kanri_${r.store}_${r.month}`
-  const restore = () => {
-    document.title = prevTitle
-    window.removeEventListener('afterprint', restore)
+  // 画面外に実体を描画（html2canvas は display:none を描画できないため）
+  el.style.cssText =
+    'display:block;position:fixed;left:-10000px;top:0;width:760px;background:#fff;padding:24px;'
+
+  const prevLabel = btn ? btn.textContent : ''
+  if (btn) {
+    btn.disabled = true
+    btn.textContent = 'PDF生成中…'
   }
-  window.addEventListener('afterprint', restore)
-  window.print()
+  if (msg) msg.hidden = true
+
+  try {
+    // クリック時にのみ読み込む（初期バンドルを軽く保つ）
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ])
+
+    const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+    const imgData = canvas.toDataURL('image/png')
+
+    const pdf = new jsPDF({ unit: 'pt', format: 'a4' })
+    const pageW = pdf.internal.pageSize.getWidth()
+    const pageH = pdf.internal.pageSize.getHeight()
+    const imgW = pageW
+    const imgH = (canvas.height * imgW) / canvas.width
+
+    // 縦長レポートをページ分割（同一画像を負オフセットで重ねてページ毎に切り出す）
+    let heightLeft = imgH
+    let position = 0
+    pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH, '', 'FAST')
+    heightLeft -= pageH
+    while (heightLeft > 0) {
+      position = heightLeft - imgH
+      pdf.addPage()
+      pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH, '', 'FAST')
+      heightLeft -= pageH
+    }
+
+    pdf.save(`bar-kanri_${r.store}_${r.month}.pdf`)
+  } catch (err) {
+    console.error('PDF生成に失敗:', err)
+    showErr('PDF生成に失敗しました: ' + (err.message || err))
+  } finally {
+    el.removeAttribute('style') // CSS の #print-report{display:none} に戻す
+    if (btn) {
+      btn.disabled = false
+      btn.textContent = prevLabel
+    }
+  }
 }
 
 export function initSummary() {

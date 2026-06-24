@@ -346,7 +346,8 @@ body {
 .btn-mini.danger { color: var(--red-dark); }
 .btn-mini.danger:hover { border-color: var(--red); }
 
-/* ===================== PDF出力（print 方式・手順10） ===================== */
+/* ===================== PDF出力（jsPDF + html2canvas・手順10） =====================
+   画面では非表示。出力時のみJSが画面外に実体描画してキャプチャする。 */
 #print-report { display: none; }
 .pr-h1 { font-size: 20px; margin-bottom: 4px; color: #333; }
 .pr-sub { font-size: 13px; color: #666; margin-bottom: 16px; }
@@ -356,13 +357,6 @@ body {
 .pr-table th { background: #fceaf4; font-weight: 700; white-space: nowrap; }
 .pr-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .pr-foot { margin-top: 20px; font-size: 10px; color: #999; }
-
-@media print {
-  body { background: #fff !important; }
-  #lock-screen, #app-main { display: none !important; }
-  #print-report { display: block !important; }
-  @page { margin: 14mm; }
-}
 
 /* ===================== ナビ（モバイル: 下タブ） ===================== */
 .tabbar {

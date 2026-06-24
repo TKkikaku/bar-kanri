@@ -13,6 +13,8 @@
     "vite": "^8.1.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.108.2"
+    "@supabase/supabase-js": "^2.108.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1"
   }
 }
