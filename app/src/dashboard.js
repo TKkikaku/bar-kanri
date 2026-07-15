@@ -1,10 +1,12 @@
-import { fetchSalesRange, fetchAutoBackRange } from './db.js'
+import { fetchSalesRange } from './db.js'
 
 const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
 
 let inited = false
 let period = 'today' // today | month
+let metric = 'sales' // sales | groups | drinks（並び順・強調数字の指標。期間タブとは独立）
+let lastStaff = null // 直近の集計結果（指標タブ切替時は再フェッチせず再描画に使う）
 
 const yen = (n) => '¥' + Number(n).toLocaleString('ja-JP')
 const esc = (s) =>
@@ -63,7 +65,7 @@ function renderMvp(monthRows) {
     .join('')
 }
 
-// 売上を担当別に集計（§9: 売上 / 組数 / 客層 / 指名ドリンク数）
+// 売上を担当別に集計（売上 / 組数 / 指名ドリンク数。客層はダッシュボードでは非表示）
 function aggregate(rows) {
   const map = new Map()
   let totalSales = 0
@@ -81,37 +83,62 @@ function aggregate(rows) {
         sales: 0,
         groups: 0,
         drinks: 0,
-        ages: {},
       }
       map.set(id, a)
     }
     a.sales += r.amount || 0
     a.groups += r.groups || 0
     a.drinks += r.nominated_drinks || 0
-    ;(r.ages || []).forEach((t) => {
-      a.ages[t] = (a.ages[t] || 0) + 1
-    })
   })
   const staff = [...map.values()].sort((x, y) => y.sales - x.sales)
   return { staff, totalSales, totalGroups }
 }
 
-function agesText(ages) {
-  const ent = Object.entries(ages).sort((a, b) => b[1] - a[1])
-  if (!ent.length) return '—'
-  return ent.map(([t, c]) => `${t}${c > 1 ? '×' + c : ''}`).join(' / ')
+// 指標ごとの表示（強調＝main / サブ行＝sub）。並び順キーは同名プロパティ。
+const METRICS = {
+  sales: { main: (s) => yen(s.sales), sub: (s) => yen(s.sales) },
+  groups: { main: (s) => `${s.groups}組`, sub: (s) => `組数 ${s.groups}` },
+  drinks: { main: (s) => `${s.drinks}杯`, sub: (s) => `ドリンク ${s.drinks}` },
 }
+const METRIC_ORDER = ['sales', 'groups', 'drinks']
 
-// 担当別バック累計（daily_expenses.is_auto_back を related_sale_id 経由で担当に紐づけ）
-function backByStaff(sales, autoBacks) {
-  const saleToStaff = new Map()
-  sales.forEach((s) => saleToStaff.set(s.id, s.staff_member_id))
-  const m = new Map()
-  autoBacks.forEach((b) => {
-    const sid = saleToStaff.get(b.related_sale_id)
-    if (sid) m.set(sid, (m.get(sid) || 0) + (b.amount || 0))
-  })
-  return m
+// スタッフ別実績ランキングを描画（lastStaff × 選択中の指標）。
+// 選択指標の降順で並べ、1〜3位はメダル絵文字・4位以降は「N位」。
+// 右の強調数字は選択指標、サブ行は残り2指標。フリーも順位付けに含める。
+function renderRanking() {
+  const staffBox = $('#dash-staff')
+  if (!lastStaff) return
+  if (!lastStaff.length) {
+    staffBox.innerHTML = '<div class="card"><p class="muted">この期間の売上記録はありません</p></div>'
+    return
+  }
+
+  const m = metric
+  const sorted = [...lastStaff].sort((a, b) => b[m] - a[m])
+  const MEDALS = ['🥇', '🥈', '🥉']
+
+  const rowsHtml = sorted
+    .map((s, i) => {
+      const badge =
+        i < 3
+          ? `<span class="rank-medal">${MEDALS[i]}</span>`
+          : `<span class="rank-num">${i + 1}位</span>`
+      const subText = METRIC_ORDER.filter((k) => k !== m)
+        .map((k) => METRICS[k].sub(s))
+        .join(' ・ ')
+      return `
+        <div class="rank-row${i < 3 ? ' top' : ''}">
+          <div class="rank-badge">${badge}</div>
+          <div class="rank-main">
+            <div class="rank-name">${esc(s.name)}${s.is_free ? ' <span class="badge auto">フリー</span>' : ''}</div>
+            <div class="rank-meta">${subText}</div>
+          </div>
+          <div class="rank-sales">${METRICS[m].main(s)}</div>
+        </div>`
+    })
+    .join('')
+
+  staffBox.innerHTML = `<div class="rank-list">${rowsHtml}</div>`
 }
 
 export async function loadDashboard() {
@@ -125,44 +152,20 @@ export async function loadDashboard() {
 
   try {
     const mb = monthBoundsNow()
-    const [rows, autoBacks] = await Promise.all([
-      fetchSalesRange(start, next),
-      fetchAutoBackRange(start, next),
-    ])
+    const rows = await fetchSalesRange(start, next)
     // MVP は常に「今月」固定（期間タブと独立）
     const monthRows = period === 'month' ? rows : await fetchSalesRange(mb.start, mb.next)
     renderMvp(monthRows)
 
     const { staff, totalSales, totalGroups } = aggregate(rows)
-    const bmap = backByStaff(rows, autoBacks)
-    staff.forEach((s) => (s.back = bmap.get(s.id) || 0))
+    lastStaff = staff
 
     sumBox.innerHTML =
       `<div class="dash-stat"><div class="ds-k">${label}の売上</div><div class="ds-v">${yen(totalSales)}</div></div>` +
       `<div class="dash-stat"><div class="ds-k">組数</div><div class="ds-v">${totalGroups}<span class="ds-u">組</span></div></div>`
 
-    if (!staff.length) {
-      staffBox.innerHTML = '<div class="card"><p class="muted">この期間の売上記録はありません</p></div>'
-      return
-    }
-
-    staffBox.innerHTML = staff
-      .map(
-        (s) => `
-      <div class="staff-card">
-        <div class="sc-head">
-          <span class="sc-name">${esc(s.name)}${s.is_free ? ' <span class="badge auto">フリー</span>' : ''}</span>
-          <span class="sc-sales">${yen(s.sales)}</span>
-        </div>
-        <div class="sc-grid">
-          <div class="sc-cell"><span class="sc-k">組数</span><span class="sc-v">${s.groups}</span></div>
-          <div class="sc-cell"><span class="sc-k">指名ドリンク</span><span class="sc-v">${s.drinks}</span></div>
-        </div>
-        ${s.is_free ? '' : `<div class="sc-back"><span class="sc-k">バック</span><span class="sc-back-v">${yen(s.back)}</span></div>`}
-        <div class="sc-ages"><span class="sc-k">客層</span> ${esc(agesText(s.ages))}</div>
-      </div>`
-      )
-      .join('')
+    // スタッフ別実績ランキング（選択中の指標で並べ替え・強調）
+    renderRanking()
   } catch (err) {
     console.error('ダッシュボードの取得に失敗:', err)
     staffBox.innerHTML = `<p class="form-msg err">読み込みに失敗しました: ${esc(err.message || err)}</p>`
@@ -178,5 +181,13 @@ export function initDashboard() {
     period = t.dataset.period
     $$('#dash-period .tab').forEach((b) => b.classList.toggle('active', b === t))
     loadDashboard()
+  })
+  // 指標タブ（売上/組数/ドリンク）は期間タブと独立。再フェッチせず並べ替え＋再描画のみ。
+  $('#dash-metric').addEventListener('click', (e) => {
+    const t = e.target.closest('[data-metric]')
+    if (!t) return
+    metric = t.dataset.metric
+    $$('#dash-metric .tab').forEach((b) => b.classList.toggle('active', b === t))
+    renderRanking()
   })
 }

@@ -262,8 +262,39 @@ body {
 .dash-stat .ds-v { font-size: 26px; font-weight: 800; color: #8e5bb0; }
 .dash-stat .ds-u { font-size: 14px; font-weight: 700; margin-left: 2px; }
 
-/* スタッフカードのグリッド（10名規模対応・手順11）
-   モバイル=1列(小型) / 560px以上=2列 / デスクトップ広め=3列 */
+/* セクション見出し（今月のMVP／スタッフ別実績 共通トーン） */
+.section-title { font-size: 12px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; letter-spacing: 0.04em; }
+
+/* スタッフ別実績：売上ランキング（10名規模対応・§7.2／§10 D）
+   順位 / 担当 / 売上（強調） / 組数 / ドリンク。売上降順・フリー含む。
+   1〜3位はメダル絵文字＋パステルグラデ行、4位以降は「N位」。 */
+.rank-list { display: flex; flex-direction: column; gap: 8px; }
+.rank-row {
+  display: flex; align-items: center; gap: 12px; min-width: 0;
+  background: var(--bg-card); border-radius: 16px; padding: 12px 16px;
+  box-shadow: var(--shadow-soft);
+}
+/* 上位3位はパステルグラデで少し華やかに（MVPカードと同トーン） */
+.rank-row.top { background: linear-gradient(135deg, #fce0ef 0%, #efe1fa 100%); }
+.rank-badge { flex-shrink: 0; width: 40px; text-align: center; }
+.rank-medal { font-size: 26px; line-height: 1; }
+.rank-num { font-size: 14px; font-weight: 800; color: var(--text-sub); }
+.rank-main { flex: 1; min-width: 0; }
+/* 担当名を主役に（くっきり太め・省略表示） */
+.rank-name {
+  font-size: 17px; font-weight: 800; color: var(--text); line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rank-name .badge { vertical-align: middle; margin-left: 4px; }
+.rank-meta { font-size: 12px; font-weight: 700; color: var(--text-sub); margin-top: 3px; }
+/* 売上を大きく強調（等幅数字で桁を揃える） */
+.rank-sales {
+  flex-shrink: 0; font-size: 20px; font-weight: 800; color: var(--green-dark);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+
+/* スタッフカード（集計ページの担当別表示で使用・§7.4）
+   10名規模対応: モバイル=1列(小型) / 560px以上=2列 / デスクトップ広め=3列 */
 .staff-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
 @media (min-width: 560px) { .staff-grid { grid-template-columns: 1fr 1fr; } }
 @media (min-width: 1180px) { .staff-grid { grid-template-columns: 1fr 1fr 1fr; } }
