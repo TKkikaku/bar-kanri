@@ -86,7 +86,7 @@ function renderDetails() {
         const nm = s ? esc(s.name) + (s.is_free ? '（フリー）' : '') : '（主担当を選択）'
         return `
         <div class="detail-row">
-          <div class="d-staff d-primary"><span class="d-primary-badge">主</span>${nm}</div>
+          <div class="d-staff d-primary"><span class="d-primary-badge">主</span><span>${nm}</span></div>
           ${drinksInput}
           <span class="d-unit">杯</span>
           <span class="d-remove-placeholder"></span>
