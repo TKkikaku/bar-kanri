@@ -65,30 +65,34 @@ function renderMvp(monthRows) {
     .join('')
 }
 
-// 売上を担当別に集計（売上 / 組数 / 指名ドリンク数。客層はダッシュボードでは非表示）
-function aggregate(rows) {
+// 伝票を担当別に集計（2ソース合算・§7.2）：
+//   ・売上 / 組数 … 主担当として（1伝票 = 1組）
+//   ・ドリンク    … 全伝票横断の明細（他人の席で出した分も加算）
+// 客層はダッシュボードでは非表示。
+function aggregate(slips) {
   const map = new Map()
   let totalSales = 0
   let totalGroups = 0
-  rows.forEach((r) => {
-    totalSales += r.amount || 0
-    totalGroups += r.groups || 0
-    const id = r.staff_member_id
+  const ensure = (id, name, is_free) => {
     let a = map.get(id)
     if (!a) {
-      a = {
-        id,
-        name: r.staff?.name || '(担当不明)',
-        is_free: !!r.staff?.is_free,
-        sales: 0,
-        groups: 0,
-        drinks: 0,
-      }
+      a = { id, name: name || '(担当不明)', is_free: !!is_free, sales: 0, groups: 0, drinks: 0 }
       map.set(id, a)
     }
-    a.sales += r.amount || 0
-    a.groups += r.groups || 0
-    a.drinks += r.nominated_drinks || 0
+    return a
+  }
+  slips.forEach((slip) => {
+    totalSales += slip.total_amount || 0
+    totalGroups += 1
+    // 主担当：売上＋組数
+    const p = ensure(slip.primary_staff_id, slip.primary?.name, slip.primary?.is_free)
+    p.sales += slip.total_amount || 0
+    p.groups += 1
+    // 明細：ドリンク実績（主担当自身の明細行も含む）
+    ;(slip.details || []).forEach((d) => {
+      const a = ensure(d.staff_member_id, d.staff?.name, d.staff?.is_free)
+      a.drinks += d.drinks || 0
+    })
   })
   const staff = [...map.values()].sort((x, y) => y.sales - x.sales)
   return { staff, totalSales, totalGroups }

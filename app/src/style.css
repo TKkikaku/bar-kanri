@@ -193,6 +193,53 @@ body {
   color: var(--accent-dark); padding-top: 10px; margin-top: 8px;
   border-top: 1px solid var(--border-strong);
 }
+.back-preview .bp-tag {
+  display: inline-block; font-size: 10px; font-weight: 800; color: #fff;
+  background: var(--accent); border-radius: 999px; padding: 1px 7px; margin-right: 6px;
+}
+
+/* 伝票明細（担当 × ドリンク数） */
+.detail-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.detail-row { display: flex; align-items: center; gap: 8px; }
+.detail-row .d-staff {
+  flex: 1; min-width: 0; padding: 12px 14px; font-size: 15px; font-family: inherit;
+  color: var(--text); background: #fff; border: 2px solid var(--border-strong);
+  border-radius: 14px; outline: none; -webkit-appearance: none; appearance: none;
+}
+.detail-row select.d-staff {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23a99bb0' stroke-width='2' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+}
+.detail-row select.d-staff:focus { border-color: var(--accent); }
+.detail-row .d-primary {
+  display: flex; align-items: center; gap: 8px; font-weight: 700;
+  background: var(--accent-bg); border-color: var(--accent);
+}
+.detail-row .d-primary-badge {
+  font-size: 10px; font-weight: 800; color: #fff; background: var(--accent);
+  border-radius: 999px; padding: 2px 8px;
+}
+.detail-row .d-drinks {
+  width: 68px; flex: none; padding: 12px 10px; font-size: 15px; font-family: inherit;
+  text-align: center; color: var(--text); background: #fff;
+  border: 2px solid var(--border-strong); border-radius: 14px; outline: none;
+  -webkit-appearance: none; appearance: none;
+}
+.detail-row .d-drinks:focus { border-color: var(--accent); }
+.detail-row .d-unit { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+.detail-row .d-remove {
+  flex: none; width: 34px; height: 34px; border-radius: 999px; cursor: pointer;
+  border: none; background: var(--bg-alt); color: var(--accent-dark);
+  font-size: 18px; font-weight: 800; line-height: 1;
+}
+.detail-row .d-remove:hover { background: var(--accent-bg); }
+.detail-row .d-remove-placeholder { flex: none; width: 34px; }
+.btn-add {
+  background: #fff; color: var(--accent-dark);
+  border: 2px dashed var(--border-strong); font-size: 14px; padding: 11px 18px;
+}
+.btn-add:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-bg); }
+.btn-add:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* フォームメッセージ */
 .form-msg { font-size: 13px; font-weight: 700; text-align: center; padding: 4px 0; }

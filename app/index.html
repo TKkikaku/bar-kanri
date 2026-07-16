@@ -86,24 +86,25 @@
             <button type="button" class="tab" data-input-tab="expense">支出</button>
           </div>
 
-          <!-- 売上入力（§7.1） -->
+          <!-- 売上入力（伝票単位・§7.1） -->
           <form id="form-sale" class="form" novalidate>
             <label class="field"><span class="field-label">日付</span>
               <input type="date" id="sale-date" required></label>
-            <label class="field"><span class="field-label">金額</span>
-              <input type="number" id="sale-amount" inputmode="numeric" min="0" placeholder="0" required></label>
-            <label class="field"><span class="field-label">担当スタッフ</span>
-              <select id="sale-staff" required></select></label>
-            <label class="field"><span class="field-label">組数</span>
-              <input type="number" id="sale-groups" inputmode="numeric" min="0" placeholder="0" required></label>
+            <label class="field"><span class="field-label">主担当（席担当）</span>
+              <select id="sale-primary" required></select></label>
+            <label class="field"><span class="field-label">伝票総額</span>
+              <input type="number" id="sale-total" inputmode="numeric" min="0" placeholder="0" required></label>
+            <div class="field">
+              <span class="field-label">明細（担当 × ドリンク数）</span>
+              <div id="sale-details" class="detail-list"></div>
+              <button type="button" id="sale-add-detail" class="btn btn-add btn-block">＋ 担当を追加</button>
+            </div>
             <div class="field"><span class="field-label">客層（複数選択可・任意）</span>
               <div class="chips" id="sale-ages"></div></div>
-            <label class="field"><span class="field-label">指名ドリンク数</span>
-              <input type="number" id="sale-drinks" inputmode="numeric" min="0" value="0"></label>
             <label class="field"><span class="field-label">メモ（任意）</span>
               <input type="text" id="sale-memo" placeholder="例: 週末営業分"></label>
             <div class="back-preview" id="sale-back-preview" hidden></div>
-            <button type="submit" class="btn btn-primary btn-block">売上を登録</button>
+            <button type="submit" class="btn btn-primary btn-block">伝票を登録</button>
             <p class="form-msg" id="sale-msg" hidden></p>
           </form>
 

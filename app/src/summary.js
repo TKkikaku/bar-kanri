@@ -46,36 +46,33 @@ function agesText(ages) {
   return ent.map(([t, c]) => `${t}${c > 1 ? '×' + c : ''}`).join(' / ')
 }
 
-// 担当別集計（§9）
-function aggregateStaff(sales) {
+// 担当別集計（§7.4・2ソース合算）：
+//   ・売上 / 組数 / 客層 … 主担当として（1伝票 = 1組、客層は主担当に帰属）
+//   ・ドリンク / バック  … 全伝票横断の明細（back_amount は登録時点スナップショット）
+function aggregateStaff(slips) {
   const map = new Map()
-  sales.forEach((r) => {
-    const id = r.staff_member_id
+  const ensure = (id, name, is_free) => {
     let a = map.get(id)
     if (!a) {
-      a = { id, name: r.staff?.name || '(担当不明)', is_free: !!r.staff?.is_free, sales: 0, groups: 0, drinks: 0, ages: {} }
+      a = { id, name: name || '(担当不明)', is_free: !!is_free, sales: 0, groups: 0, drinks: 0, back: 0, ages: {} }
       map.set(id, a)
     }
-    a.sales += r.amount || 0
-    a.groups += r.groups || 0
-    a.drinks += r.nominated_drinks || 0
-    ;(r.ages || []).forEach((t) => {
-      a.ages[t] = (a.ages[t] || 0) + 1
+    return a
+  }
+  slips.forEach((slip) => {
+    const p = ensure(slip.primary_staff_id, slip.primary?.name, slip.primary?.is_free)
+    p.sales += slip.total_amount || 0
+    p.groups += 1
+    ;(slip.ages || []).forEach((t) => {
+      p.ages[t] = (p.ages[t] || 0) + 1
+    })
+    ;(slip.details || []).forEach((d) => {
+      const a = ensure(d.staff_member_id, d.staff?.name, d.staff?.is_free)
+      a.drinks += d.drinks || 0
+      a.back += d.back_amount || 0
     })
   })
   return [...map.values()].sort((x, y) => y.sales - x.sales)
-}
-
-// 担当別バック累計（is_auto_back を related_sale_id 経由で担当に紐づけ）
-function backByStaff(sales, autoBacks) {
-  const saleToStaff = new Map()
-  sales.forEach((s) => saleToStaff.set(s.id, s.staff_member_id))
-  const m = new Map()
-  autoBacks.forEach((b) => {
-    const sid = saleToStaff.get(b.related_sale_id)
-    if (sid) m.set(sid, (m.get(sid) || 0) + (b.amount || 0))
-  })
-  return m
 }
 
 export async function loadSummary() {
@@ -91,7 +88,7 @@ export async function loadSummary() {
       fetchGoal(month),
     ])
 
-    const totalSales = sales.reduce((s, r) => s + (r.amount || 0), 0)
+    const totalSales = sales.reduce((s, r) => s + (r.total_amount || 0), 0)
     const totalExpense = expenses.reduce((s, r) => s + (r.amount || 0), 0)
     const profit = totalSales - totalExpense
 
@@ -114,11 +111,8 @@ export async function loadSummary() {
       goalHtml = '<p class="muted">目標未設定（設定タブで設定できます）</p>'
     }
 
-    // 担当別集計
+    // 担当別集計（売上/組数/客層＝主担当、ドリンク/バック＝明細横断）
     const staff = aggregateStaff(sales)
-    // 担当別バック累計（fetch済みの支出からバック自動計上を抽出して紐づけ）
-    const bmap = backByStaff(sales, expenses.filter((e) => e.is_auto_back))
-    staff.forEach((s) => (s.back = bmap.get(s.id) || 0))
 
     const staffHtml = staff.length
       ? '<div class="staff-grid">' +
@@ -166,7 +160,7 @@ export async function loadSummary() {
     const wd = [0, 0, 0, 0, 0, 0, 0]
     sales.forEach((r) => {
       const d = new Date(r.date + 'T00:00:00')
-      wd[d.getDay()] += r.amount || 0
+      wd[d.getDay()] += r.total_amount || 0
     })
     const wdHtml = barRows(
       wd.map((value, i) => ({ label: WD[i], value })),
@@ -175,7 +169,7 @@ export async function loadSummary() {
 
     // 日別 売上
     const dayMap = {}
-    sales.forEach((r) => (dayMap[r.date] = (dayMap[r.date] || 0) + (r.amount || 0)))
+    sales.forEach((r) => (dayMap[r.date] = (dayMap[r.date] || 0) + (r.total_amount || 0)))
     const dayEntries = Object.keys(dayMap)
       .sort()
       .map((d) => {

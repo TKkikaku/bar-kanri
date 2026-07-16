@@ -25,54 +25,86 @@ export async function fetchSettings() {
   return data
 }
 
-// バック自動計算（§6）。フリーは対象外。
-export function calcBack(amount, nominatedDrinks, settings) {
-  const salesBack = Math.floor(Number(amount) * Number(settings.sales_rate))
-  const drinkBack = Number(nominatedDrinks) * Number(settings.drink_unit)
-  return { salesBack, drinkBack, total: salesBack + drinkBack }
+// 伝票バックの自動計算（§6・伝票単位）。
+// details = [{ staff_member_id, drinks, is_free }]。主担当も1行含める（drinks=0可）。
+//   有償ドリンク（フリー以外）合計 → 売上按分 → 各明細の back_amount を確定。
+//   ・主担当（フリー以外）バック = salesPortion + 自分のdrinks × drinkUnit
+//   ・他スタッフ（フリー以外）バック = drinks × drinkUnit
+//   ・フリーは対象外（back_amount = 0）。主担当がフリーでも salesPortion は誰にも計上しない。
+export function calcSlipBack(totalAmount, primaryStaffId, details, settings) {
+  const drinkUnit = Number(settings.drink_unit)
+  const rate = Number(settings.sales_rate)
+
+  // フリー以外の明細ドリンクだけを合計（フリーの杯数は含めない・判断事項③）
+  const paidDrinks = details.reduce((s, d) => s + (d.is_free ? 0 : Number(d.drinks) || 0), 0)
+  const paidDrinkBack = paidDrinks * drinkUnit
+  const salesPortion = Math.floor(Math.max(0, Number(totalAmount) - paidDrinkBack) * rate)
+
+  const detailBacks = details.map((d) => {
+    if (d.is_free) return { ...d, back_amount: 0 }
+    let back = (Number(d.drinks) || 0) * drinkUnit
+    // 主担当（フリー以外）だけ売上按分を加算。主担当がフリーなら salesPortion は計上されない。
+    if (d.staff_member_id === primaryStaffId) back += salesPortion
+    return { ...d, back_amount: back }
+  })
+  const totalBack = detailBacks.reduce((s, d) => s + d.back_amount, 0)
+  return { detailBacks, totalBack, salesPortion, paidDrinkBack }
 }
 
-// 売上を登録（§7.1）＋ バック自動計上を daily_expenses に記録（§6）
-export async function addSale(sale) {
+// 伝票を登録（§7.1）：ヘッダー ＋ 明細（back_amountスナップショット）＋ 集約バック行（§6）。
+// slip = { date, primary_staff_id, total_amount, ages, memo, details:[{staff_member_id,drinks,is_free}] }
+export async function addSlip(slip) {
   const store = getStore()
+  const settings = await fetchSettings()
+  const { detailBacks, totalBack } = calcSlipBack(
+    slip.total_amount,
+    slip.primary_staff_id,
+    slip.details,
+    settings
+  )
 
-  const { data: inserted, error } = await supabase
-    .from('daily_sales')
+  // 1) 伝票ヘッダー
+  const { data: header, error: hErr } = await supabase
+    .from('sales_slips')
     .insert({
       store,
-      date: sale.date,
-      staff_member_id: sale.staff_member_id,
-      amount: sale.amount,
-      groups: sale.groups,
-      ages: sale.ages && sale.ages.length ? sale.ages : null,
-      nominated_drinks: sale.nominated_drinks,
-      memo: sale.memo || null,
+      date: slip.date,
+      primary_staff_id: slip.primary_staff_id,
+      total_amount: slip.total_amount,
+      ages: slip.ages && slip.ages.length ? slip.ages : null,
+      memo: slip.memo || null,
     })
     .select()
     .single()
-  if (error) throw error
+  if (hErr) throw hErr
 
-  // フリー以外なら自動バックを支出に計上
+  // 2) 明細（担当×ドリンク数 ＋ 確定バックのスナップショット）
+  const detailRows = detailBacks.map((d) => ({
+    slip_id: header.id,
+    staff_member_id: d.staff_member_id,
+    drinks: Number(d.drinks) || 0,
+    back_amount: d.back_amount,
+  }))
+  const { error: dErr } = await supabase.from('sales_slip_details').insert(detailRows)
+  if (dErr) throw dErr
+
+  // 3) 集約バック行（合計 > 0 のとき daily_expenses に1本だけ計上）
   let back = null
-  if (!sale.isFree) {
-    const settings = await fetchSettings()
-    const b = calcBack(sale.amount, sale.nominated_drinks, settings)
-    if (b.total > 0) {
-      const { error: backErr } = await supabase.from('daily_expenses').insert({
-        store,
-        date: sale.date,
-        amount: b.total,
-        category: AUTO_BACK_CATEGORY,
-        is_auto_back: true,
-        related_sale_id: inserted.id,
-        memo: null,
-      })
-      if (backErr) throw backErr
-      back = b
-    }
+  if (totalBack > 0) {
+    const { error: bErr } = await supabase.from('daily_expenses').insert({
+      store,
+      date: slip.date,
+      amount: totalBack,
+      category: AUTO_BACK_CATEGORY,
+      is_auto_back: true,
+      related_slip_id: header.id,
+      memo: null,
+    })
+    if (bErr) throw bErr
+    back = { total: totalBack, detailBacks }
   }
 
-  return { sale: inserted, back }
+  return { slip: header, detailBacks, back }
 }
 
 // 月の範囲（YYYY-MM → [start, next)）
@@ -100,13 +132,16 @@ async function paginate(queryFn, pageSize = 1000) {
   return all
 }
 
-// 指定範囲 [start, next) ・現在店舗の売上（担当名を埋め込み）
+// 指定範囲 [start, next) ・現在店舗の伝票（主担当名＋明細＋明細担当名をネスト埋め込み）。
+// 返り値: sales_slips 行に primary（主担当）と details（[{drinks,back_amount,staff:{name,is_free}}]）が付く。
 export async function fetchSalesRange(start, next) {
   const store = getStore()
   return paginate((from, to) =>
     supabase
-      .from('daily_sales')
-      .select('*, staff:staff_members(name, is_free)')
+      .from('sales_slips')
+      .select(
+        '*, primary:staff_members!primary_staff_id(name, is_free), details:sales_slip_details(*, staff:staff_members(name, is_free))'
+      )
       .eq('store', store)
       .gte('date', start)
       .lt('date', next)
@@ -116,27 +151,10 @@ export async function fetchSalesRange(start, next) {
   )
 }
 
-// 指定月・現在店舗の売上（担当名を埋め込み）
+// 指定月・現在店舗の伝票（主担当名＋明細を埋め込み）
 export async function fetchSalesByMonth(month) {
   const { start, next } = monthBounds(month)
   return fetchSalesRange(start, next)
-}
-
-// 指定範囲・現在店舗のバック自動計上（担当別バック累計の集計用）
-// related_sale_id 経由で「どの担当のバックか」を後段で紐づける。
-export async function fetchAutoBackRange(start, next) {
-  const store = getStore()
-  return paginate((from, to) =>
-    supabase
-      .from('daily_expenses')
-      .select('amount, related_sale_id')
-      .eq('store', store)
-      .eq('is_auto_back', true)
-      .gte('date', start)
-      .lt('date', next)
-      .order('related_sale_id', { ascending: true })
-      .range(from, to)
-  )
 }
 
 // 指定月・現在店舗の支出（バック自動計上行を含む）

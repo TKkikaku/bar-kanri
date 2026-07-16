@@ -33,18 +33,22 @@ function shiftMonth(delta) {
   month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
+// 伝票を1行で表示（主担当を主役に、明細＝担当×杯数を meta に要約）
 function mapSale(s) {
-  const meta = [`${s.groups}組`]
+  const meta = []
+  const detailText = (s.details || [])
+    .map((d) => `${d.staff?.name || '?'}${d.drinks ? ` ${d.drinks}杯` : ''}`)
+    .join('・')
+  if (detailText) meta.push(detailText)
   if (s.ages && s.ages.length) meta.push(s.ages.join('・'))
-  if (s.nominated_drinks) meta.push(`指名ドリンク ${s.nominated_drinks}`)
   if (s.memo) meta.push(s.memo)
   return {
     type: 'sale',
     date: s.date,
     created_at: s.created_at || '',
-    title: s.staff?.name || '(担当不明)',
+    title: s.primary?.name || '(主担当不明)',
     meta: meta.join(' / '),
-    amount: s.amount,
+    amount: s.total_amount,
     badges: ['売上'],
   }
 }
