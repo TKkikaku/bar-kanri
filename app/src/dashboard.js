@@ -4,8 +4,7 @@ const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
 
 let inited = false
-let period = 'today' // today | month
-let metric = 'sales' // sales | netSales | groups | drinks（並び順・強調数字の指標。期間タブとは独立）
+let metric = 'sales' // sales | netSales | groups | drinks（並び順・強調数字の指標）
 let lastStaff = null // 直近の集計結果（指標タブ切替時は再フェッチせず再描画に使う）
 
 const yen = (n) => '¥' + Number(n).toLocaleString('ja-JP')
@@ -18,6 +17,7 @@ const esc = (s) =>
 const ymd = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
+// ダッシュボードは今月固定（§7.2）。呼ぶたびに現在日から算出するので月をまたいでも追従する。
 function monthBoundsNow() {
   const now = new Date()
   return {
@@ -26,19 +26,9 @@ function monthBoundsNow() {
   }
 }
 
-function bounds() {
-  const now = new Date()
-  if (period === 'today') {
-    const start = ymd(now)
-    const next = ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1))
-    return { start, next }
-  }
-  return monthBoundsNow()
-}
-
-// 今月のMVP（フリー対象外・同率は id 先勝ち）を描画
-function renderMvp(monthRows) {
-  const staff = aggregate(monthRows).staff.filter((s) => !s.is_free)
+// 今月のMVP（フリー対象外・同率は id 先勝ち）を描画。実売上MVPは作らない（§7.2）。
+function renderMvp(slips) {
+  const staff = aggregate(slips).staff.filter((s) => !s.is_free)
   // id 昇順で安定化 → 同率時は先頭（小さい id）が勝つ
   const byId = [...staff].sort((a, b) => String(a.id).localeCompare(String(b.id)))
   const pick = (metric) =>
@@ -153,26 +143,23 @@ function renderRanking() {
 
 export async function loadDashboard() {
   if (!inited) return
-  const label = period === 'today' ? '今日' : '今月'
-  const { start, next } = bounds()
+  const { start, next } = monthBoundsNow()
   const staffBox = $('#dash-staff')
   const sumBox = $('#dash-summary')
   staffBox.innerHTML = '<p class="muted" style="text-align:center;padding:24px 0;">読み込み中…</p>'
   sumBox.innerHTML = ''
 
   try {
-    const mb = monthBoundsNow()
+    // 今月固定なので取得は1回。MVP・総計・ランキングすべて同じ行から集計する。
     const rows = await fetchSalesRange(start, next)
-    // MVP は常に「今月」固定（期間タブと独立）
-    const monthRows = period === 'month' ? rows : await fetchSalesRange(mb.start, mb.next)
-    renderMvp(monthRows)
+    renderMvp(rows)
 
     const { staff, totalSales, totalGroups } = aggregate(rows)
     lastStaff = staff
 
     sumBox.innerHTML =
-      `<div class="dash-stat"><div class="ds-k">${label}の売上</div><div class="ds-v">${yen(totalSales)}</div></div>` +
-      `<div class="dash-stat"><div class="ds-k">組数</div><div class="ds-v">${totalGroups}<span class="ds-u">組</span></div></div>`
+      `<div class="dash-stat"><div class="ds-k">今月の売上</div><div class="ds-v">${yen(totalSales)}</div></div>` +
+      `<div class="dash-stat"><div class="ds-k">今月の組数</div><div class="ds-v">${totalGroups}<span class="ds-u">組</span></div></div>`
 
     // スタッフ別実績ランキング（選択中の指標で並べ替え・強調）
     renderRanking()
@@ -185,14 +172,7 @@ export async function loadDashboard() {
 export function initDashboard() {
   if (inited) return
   inited = true
-  $('#dash-period').addEventListener('click', (e) => {
-    const t = e.target.closest('[data-period]')
-    if (!t) return
-    period = t.dataset.period
-    $$('#dash-period .tab').forEach((b) => b.classList.toggle('active', b === t))
-    loadDashboard()
-  })
-  // 指標タブ（売上/組数/ドリンク）は期間タブと独立。再フェッチせず並べ替え＋再描画のみ。
+  // 指標タブ（売上/実売上/組数/ドリンク）は並べ替え用。再フェッチせず並べ替え＋再描画のみ。
   $('#dash-metric').addEventListener('click', (e) => {
     const t = e.target.closest('[data-metric]')
     if (!t) return
