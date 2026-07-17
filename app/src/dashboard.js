@@ -1,11 +1,11 @@
-import { fetchSalesRange } from './db.js'
+import { fetchSalesRange, calcNetSales } from './db.js'
 
 const $ = (sel, root = document) => root.querySelector(sel)
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)]
 
 let inited = false
 let period = 'today' // today | month
-let metric = 'sales' // sales | groups | drinks（並び順・強調数字の指標。期間タブとは独立）
+let metric = 'sales' // sales | netSales | groups | drinks（並び順・強調数字の指標。期間タブとは独立）
 let lastStaff = null // 直近の集計結果（指標タブ切替時は再フェッチせず再描画に使う）
 
 const yen = (n) => '¥' + Number(n).toLocaleString('ja-JP')
@@ -66,8 +66,8 @@ function renderMvp(monthRows) {
 }
 
 // 伝票を担当別に集計（2ソース合算・§7.2）：
-//   ・売上 / 組数 … 主担当として（1伝票 = 1組）
-//   ・ドリンク    … 全伝票横断の明細（他人の席で出した分も加算）
+//   ・売上 / 実売上 / 組数 … 主担当として（1伝票 = 1組）
+//   ・ドリンク            … 全伝票横断の明細（他人の席で出した分も加算）
 // 客層はダッシュボードでは非表示。
 function aggregate(slips) {
   const map = new Map()
@@ -76,7 +76,7 @@ function aggregate(slips) {
   const ensure = (id, name, is_free) => {
     let a = map.get(id)
     if (!a) {
-      a = { id, name: name || '(担当不明)', is_free: !!is_free, sales: 0, groups: 0, drinks: 0 }
+      a = { id, name: name || '(担当不明)', is_free: !!is_free, sales: 0, netSales: 0, groups: 0, drinks: 0 }
       map.set(id, a)
     }
     return a
@@ -84,9 +84,10 @@ function aggregate(slips) {
   slips.forEach((slip) => {
     totalSales += slip.total_amount || 0
     totalGroups += 1
-    // 主担当：売上＋組数
+    // 主担当：売上＋実売上＋組数
     const p = ensure(slip.primary_staff_id, slip.primary?.name, slip.primary?.is_free)
     p.sales += slip.total_amount || 0
+    p.netSales += calcNetSales(slip)
     p.groups += 1
     // 明細：ドリンク実績（主担当自身の明細行も含む）
     ;(slip.details || []).forEach((d) => {
@@ -100,11 +101,14 @@ function aggregate(slips) {
 
 // 指標ごとの表示（強調＝main / サブ行＝sub）。並び順キーは同名プロパティ。
 const METRICS = {
-  sales: { main: (s) => yen(s.sales), sub: (s) => yen(s.sales) },
+  sales: { main: (s) => yen(s.sales), sub: (s) => `伝票総額 ${yen(s.sales)}` },
+  netSales: { main: (s) => yen(s.netSales) },
   groups: { main: (s) => `${s.groups}組`, sub: (s) => `組数 ${s.groups}` },
   drinks: { main: (s) => `${s.drinks}杯`, sub: (s) => `ドリンク ${s.drinks}` },
 }
-const METRIC_ORDER = ['sales', 'groups', 'drinks']
+// サブ行に出す指標。実売上は含めない（実売上タブでのみ強調表示する）。
+// 実売上タブでは選択指標を除外しても3つ全部が残る＝「伝票総額 / 組数 / ドリンク」になる。
+const SUB_ORDER = ['sales', 'groups', 'drinks']
 
 // スタッフ別実績ランキングを描画（lastStaff × 選択中の指標）。
 // 選択指標の降順で並べ、1〜3位はメダル絵文字・4位以降は「N位」。
@@ -127,9 +131,11 @@ function renderRanking() {
         i < 3
           ? `<span class="rank-medal">${MEDALS[i]}</span>`
           : `<span class="rank-num">${i + 1}位</span>`
-      const subText = METRIC_ORDER.filter((k) => k !== m)
+      const subText = SUB_ORDER.filter((k) => k !== m)
         .map((k) => METRICS[k].sub(s))
         .join(' ・ ')
+      // 実売上が負（他担当ドリンクが伝票総額を超える＝入力ミスの疑い）は赤字で目立たせる
+      const neg = m === 'netSales' && s.netSales < 0 ? ' neg' : ''
       return `
         <div class="rank-row${i < 3 ? ' top' : ''}">
           <div class="rank-badge">${badge}</div>
@@ -137,7 +143,7 @@ function renderRanking() {
             <div class="rank-name">${esc(s.name)}${s.is_free ? ' <span class="badge auto">フリー</span>' : ''}</div>
             <div class="rank-meta">${subText}</div>
           </div>
-          <div class="rank-sales">${METRICS[m].main(s)}</div>
+          <div class="rank-sales${neg}">${METRICS[m].main(s)}</div>
         </div>`
     })
     .join('')

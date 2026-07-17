@@ -1,4 +1,4 @@
-import { fetchSalesByMonth, fetchExpensesByMonth, fetchGoal } from './db.js'
+import { fetchSalesByMonth, fetchExpensesByMonth, fetchGoal, calcNetSales } from './db.js'
 import { getStore } from './store.js'
 
 const $ = (sel, root = document) => root.querySelector(sel)
@@ -47,14 +47,14 @@ function agesText(ages) {
 }
 
 // 担当別集計（§7.4・2ソース合算）：
-//   ・売上 / 組数 / 客層 … 主担当として（1伝票 = 1組、客層は主担当に帰属）
-//   ・ドリンク / バック  … 全伝票横断の明細（back_amount は登録時点スナップショット）
+//   ・売上 / 実売上 / 組数 / 客層 … 主担当として（1伝票 = 1組、客層は主担当に帰属）
+//   ・ドリンク / バック           … 全伝票横断の明細（back_amount は登録時点スナップショット）
 function aggregateStaff(slips) {
   const map = new Map()
   const ensure = (id, name, is_free) => {
     let a = map.get(id)
     if (!a) {
-      a = { id, name: name || '(担当不明)', is_free: !!is_free, sales: 0, groups: 0, drinks: 0, back: 0, ages: {} }
+      a = { id, name: name || '(担当不明)', is_free: !!is_free, sales: 0, netSales: 0, groups: 0, drinks: 0, back: 0, ages: {} }
       map.set(id, a)
     }
     return a
@@ -62,6 +62,7 @@ function aggregateStaff(slips) {
   slips.forEach((slip) => {
     const p = ensure(slip.primary_staff_id, slip.primary?.name, slip.primary?.is_free)
     p.sales += slip.total_amount || 0
+    p.netSales += calcNetSales(slip)
     p.groups += 1
     ;(slip.ages || []).forEach((t) => {
       p.ages[t] = (p.ages[t] || 0) + 1
@@ -122,7 +123,10 @@ export async function loadSummary() {
         <div class="staff-card">
           <div class="sc-head">
             <span class="sc-name">${esc(s.name)}${s.is_free ? ' <span class="badge auto">フリー</span>' : ''}</span>
-            <span class="sc-sales">${yen(s.sales)}</span>
+          </div>
+          <div class="sc-money">
+            <div class="sc-money-cell"><span class="sc-k">伝票総額</span><span class="sc-money-v">${yen(s.sales)}</span></div>
+            <div class="sc-money-cell"><span class="sc-k">実売上</span><span class="sc-money-v net${s.netSales < 0 ? ' neg' : ''}">${yen(s.netSales)}</span></div>
           </div>
           <div class="sc-grid">
             <div class="sc-cell"><span class="sc-k">組数</span><span class="sc-v">${s.groups}</span></div>
@@ -241,10 +245,10 @@ export async function printReport() {
     ? r.staff
         .map(
           (s) =>
-            `<tr><td>${esc(s.name)}${s.is_free ? '（フリー）' : ''}</td><td class="num">${yen(s.sales)}</td><td class="num">${s.groups}</td><td class="num">${s.drinks}</td><td class="num">${yen(s.back || 0)}</td></tr>`
+            `<tr><td>${esc(s.name)}${s.is_free ? '（フリー）' : ''}</td><td class="num">${yen(s.sales)}</td><td class="num${s.netSales < 0 ? ' neg' : ''}">${yen(s.netSales)}</td><td class="num">${s.groups}</td><td class="num">${s.drinks}</td><td class="num">${yen(s.back || 0)}</td></tr>`
         )
         .join('')
-    : '<tr><td colspan="5">売上記録がありません</td></tr>'
+    : '<tr><td colspan="6">売上記録がありません</td></tr>'
 
   const catRows = r.catEntries.length
     ? r.catEntries.map((c) => `<tr><td>${esc(c.label)}</td><td class="num">${yen(c.value)}</td></tr>`).join('')
@@ -271,7 +275,7 @@ export async function printReport() {
 
     <h2 class="pr-h2">担当別 売上一覧</h2>
     <table class="pr-table">
-      <tr><th>担当</th><th class="num">売上</th><th class="num">組数</th><th class="num">指名ドリンク</th><th class="num">バック</th></tr>
+      <tr><th>担当</th><th class="num">売上</th><th class="num">実売上</th><th class="num">組数</th><th class="num">指名ドリンク</th><th class="num">バック</th></tr>
       ${staffRows}
     </table>
 

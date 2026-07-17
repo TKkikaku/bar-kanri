@@ -51,6 +51,20 @@ export function calcSlipBack(totalAmount, primaryStaffId, details, settings) {
   return { detailBacks, totalBack, salesPortion, paidDrinkBack }
 }
 
+// 伝票1件の「実売上」（§7.2）。
+//   実売上 = 伝票総額 − 他担当（主担当以外・フリー含む）のドリンク数 × その伝票の drink_price
+// drink_price は登録時点のスナップショット（sales_slips.drink_price）を使うため、
+// 後から設定を変えても過去伝票の実売上は動かない（back_amount と同じ思想・§12）。
+// 負値はクランプしない（入力ミスを見えなくしないため・§7.2）。
+export function calcNetSales(slip) {
+  const price = Number(slip.drink_price) || 0
+  const othersDrinks = (slip.details || []).reduce(
+    (s, d) => s + (d.staff_member_id === slip.primary_staff_id ? 0 : Number(d.drinks) || 0),
+    0
+  )
+  return (Number(slip.total_amount) || 0) - othersDrinks * price
+}
+
 // 伝票を登録（§7.1）：ヘッダー ＋ 明細（back_amountスナップショット）＋ 集約バック行（§6）。
 // slip = { date, primary_staff_id, total_amount, ages, memo, details:[{staff_member_id,drinks,is_free}] }
 export async function addSlip(slip) {
@@ -71,6 +85,8 @@ export async function addSlip(slip) {
       date: slip.date,
       primary_staff_id: slip.primary_staff_id,
       total_amount: slip.total_amount,
+      // 実売上の計算に使う販売単価を登録時点で確定（§7.2）
+      drink_price: Number(settings.drink_price) || 0,
       ages: slip.ages && slip.ages.length ? slip.ages : null,
       memo: slip.memo || null,
     })
@@ -197,11 +213,11 @@ export async function deleteStaff(id) {
   if (error) throw error
 }
 
-// バック設定の更新（単一行 id=1）
-export async function updateSettings({ sales_rate, drink_unit }) {
+// バック・単価設定の更新（単一行 id=1）
+export async function updateSettings({ sales_rate, drink_unit, drink_price }) {
   const { error } = await supabase
     .from('app_settings')
-    .update({ sales_rate, drink_unit })
+    .update({ sales_rate, drink_unit, drink_price })
     .eq('id', 1)
   if (error) throw error
 }

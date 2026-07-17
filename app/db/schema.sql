@@ -3,7 +3,12 @@
 -- Supabase ダッシュボード → SQL Editor に貼り付けて実行する。
 -- 認証は使わず anon 全許可（§4）。再実行してもおおむね安全なよう記述。
 --
--- 【この版の変更点】売上を「担当別1行（daily_sales）」から
+-- 【この版の変更点】実売上（§7.2）用に drink_price を追加。
+--   ・app_settings.drink_price = ドリンク販売単価の設定値（既定800円・設定画面から変更可）
+--   ・sales_slips.drink_price  = 登録時点のスナップショット（back_amount と同じ思想）
+--   既存DBには後段の alter ... add column if not exists で追加される（既存行は800で埋まる）。
+--
+-- 【前版の変更点】売上を「担当別1行（daily_sales）」から
 --   「伝票ヘッダー（sales_slips）＋明細（sales_slip_details）」の2テーブルへ。
 --   ・1伝票 = 1組（組数は伝票件数でカウント。組数カラムは持たない）
 --   ・明細 = 担当 × ドリンク数。主担当も明細に1行含める（drinks=0可）。
@@ -34,6 +39,7 @@ create table if not exists sales_slips (
   date date not null,
   primary_staff_id uuid not null references staff_members(id), -- 主担当（席担当）
   total_amount int not null,                                   -- 伝票総額
+  drink_price int not null default 800,                        -- 登録時点のドリンク販売単価スナップショット（実売上の計算に使用・§7.2）
   ages text[],                                                 -- 客層（伝票=1組の属性）
   memo text,
   created_at timestamptz default now()
@@ -116,12 +122,19 @@ create table if not exists monthly_goals (
   unique (store, month)
 );
 
--- バック設定・単一行（§5.7）
+-- バック・単価設定・単一行（§5.7）
 create table if not exists app_settings (
   id int primary key default 1,
-  sales_rate numeric not null default 0.10,
-  drink_unit int not null default 300
+  sales_rate numeric not null default 0.10,  -- 売上バック率
+  drink_unit int not null default 300,       -- ドリンクバック単価（スタッフへ払う額）
+  drink_price int not null default 800       -- ドリンク販売単価（店頭価格・実売上の計算に使用）
 );
+
+-- ---------- drink_price 列の追加（既存DB向け・冪等） ----------
+-- 実売上（§7.2）= 主担当の伝票総額 − 他担当ドリンク数 × drink_price。
+-- 既存行は default 800 で自動的に埋まる（= 現行の店頭価格）。
+alter table app_settings add column if not exists drink_price int not null default 800;
+alter table sales_slips  add column if not exists drink_price int not null default 800;
 
 -- ---------- RLS（全テーブル anon 全許可・§4） ----------
 alter table staff_members       enable row level security;
@@ -147,9 +160,9 @@ create policy "anon_all_app_settings"       on app_settings       for all to ano
 
 -- ---------- 初期データ（本番セットアップに必要な最小限のみ） ----------
 
--- バック設定（既定 10% / ¥300）
-insert into app_settings (id, sales_rate, drink_unit)
-values (1, 0.10, 300)
+-- バック・単価設定（既定 10% / バック¥300 / 販売¥800）
+insert into app_settings (id, sales_rate, drink_unit, drink_price)
+values (1, 0.10, 300, 800)
 on conflict (id) do nothing;
 
 -- 「フリー」枠（§5.5・削除不可/バック対象外）。重複防止のため未存在時のみ。

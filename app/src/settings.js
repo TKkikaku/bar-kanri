@@ -105,12 +105,13 @@ async function handleStaffListClick(e) {
   }
 }
 
-// ---------- バック設定 ----------
+// ---------- バック・単価設定 ----------
 async function loadBackSettings() {
   try {
     const s = await fetchSettings()
     $('#set-rate').value = Math.round(Number(s.sales_rate) * 1000) / 10 // 0.10 -> 10
     $('#set-unit').value = s.drink_unit
+    $('#set-price').value = s.drink_price
   } catch (err) {
     console.error(err)
   }
@@ -120,10 +121,12 @@ async function handleSettingsSave() {
   const msg = $('#set-msg')
   const ratePct = Number($('#set-rate').value)
   const unit = Number($('#set-unit').value)
+  const price = Number($('#set-price').value)
   if (isNaN(ratePct) || ratePct < 0 || ratePct > 100) return showMsg(msg, '率は0〜100で入力してください', 'err')
-  if (isNaN(unit) || unit < 0) return showMsg(msg, '単価を入力してください', 'err')
+  if (isNaN(unit) || unit < 0) return showMsg(msg, 'ドリンクバック単価を入力してください', 'err')
+  if (isNaN(price) || price < 0) return showMsg(msg, 'ドリンク販売単価を入力してください', 'err')
   try {
-    await updateSettings({ sales_rate: ratePct / 100, drink_unit: unit })
+    await updateSettings({ sales_rate: ratePct / 100, drink_unit: unit, drink_price: price })
     await reloadInputMasters()
     showMsg(msg, '保存しました', 'ok')
   } catch (err) {

@@ -72,6 +72,7 @@
         <div class="section-title">スタッフ別実績</div>
         <div class="tabs" id="dash-metric">
           <button type="button" class="tab active" data-metric="sales">売上</button>
+          <button type="button" class="tab" data-metric="netSales">実売上</button>
           <button type="button" class="tab" data-metric="groups">組数</button>
           <button type="button" class="tab" data-metric="drinks">ドリンク</button>
         </div>
@@ -164,12 +165,16 @@
         </div>
 
         <div class="card">
-          <h2>バック設定</h2>
+          <h2>バック・単価設定</h2>
           <div class="form">
             <label class="field"><span class="field-label">売上バック率（%）</span>
               <input type="number" id="set-rate" min="0" max="100" step="0.1"></label>
             <label class="field"><span class="field-label">ドリンクバック単価（円/杯）</span>
-              <input type="number" id="set-unit" min="0" inputmode="numeric"></label>
+              <input type="number" id="set-unit" min="0" inputmode="numeric">
+              <span class="field-hint">スタッフに払うバックの単価</span></label>
+            <label class="field"><span class="field-label">ドリンク販売単価（円/杯）</span>
+              <input type="number" id="set-price" min="0" inputmode="numeric">
+              <span class="field-hint">店頭価格。実売上の計算に使う（変更後に登録した伝票から適用）</span></label>
             <button type="button" id="set-save" class="btn btn-primary btn-block">保存</button>
             <p class="form-msg" id="set-msg" hidden></p>
           </div>

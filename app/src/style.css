@@ -161,6 +161,8 @@ body {
 .form { display: flex; flex-direction: column; gap: 16px; }
 .field { display: flex; flex-direction: column; gap: 7px; }
 .field-label { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+/* 補足説明（似た名前の設定を取り違えないように・§7.5） */
+.field-hint { font-size: 11.5px; font-weight: 500; color: var(--text-muted); line-height: 1.4; margin-top: -3px; }
 .form input[type="text"],
 .form input[type="number"],
 .form input[type="date"],
@@ -352,6 +354,8 @@ body {
   flex-shrink: 0; font-size: 20px; font-weight: 800; color: var(--green-dark);
   white-space: nowrap; font-variant-numeric: tabular-nums;
 }
+/* 実売上の負値（他担当ドリンクが伝票総額を超える＝入力ミスの疑い）は赤字 */
+.rank-sales.neg { color: var(--red-dark); }
 
 /* スタッフカード（集計ページの担当別表示で使用・§7.4）
    10名規模対応: モバイル=1列(小型) / 560px以上=2列 / デスクトップ広め=3列 */
@@ -364,12 +368,24 @@ body {
   box-shadow: var(--shadow-soft); min-width: 0;
 }
 .staff-card .sc-head {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px;
+  display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;
 }
 /* 担当名を主役に（売上金額より大きく・くっきり） */
 .staff-card .sc-name { font-size: 18px; font-weight: 800; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .staff-card .sc-name .badge { vertical-align: middle; }
-.staff-card .sc-sales { font-size: 14px; font-weight: 700; color: var(--green-dark); white-space: nowrap; }
+/* 伝票総額・実売上（§7.4）。金額は桁数が出るのでラベル上・数字下の縦積み */
+.staff-card .sc-money { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.staff-card .sc-money-cell {
+  background: var(--bg-alt); border-radius: 12px; padding: 7px 10px;
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+.staff-card .sc-money-v {
+  font-size: 17px; font-weight: 800; color: var(--text);
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.staff-card .sc-money-v.net { color: var(--green-dark); }
+/* 実売上の負値（他担当ドリンクが伝票総額を超える＝入力ミスの疑い）は赤字 */
+.staff-card .sc-money-v.neg { color: var(--red-dark); }
 .staff-card .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
 .staff-card .sc-cell {
   background: var(--bg-alt); border-radius: 12px; padding: 7px 8px;
@@ -447,6 +463,8 @@ body {
 .pr-table th, .pr-table td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; color: #333; }
 .pr-table th { background: #fceaf4; font-weight: 700; white-space: nowrap; }
 .pr-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* 実売上の負値（入力ミスの疑い）は赤字。PDFは白背景固定なので直値指定 */
+.pr-table .num.neg { color: #d6708e; }
 .pr-foot { margin-top: 20px; font-size: 10px; color: #999; }
 
 /* ===================== ナビ（モバイル: 下タブ） ===================== */
