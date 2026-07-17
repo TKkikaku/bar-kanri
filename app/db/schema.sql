@@ -3,7 +3,13 @@
 -- Supabase ダッシュボード → SQL Editor に貼り付けて実行する。
 -- 認証は使わず anon 全許可（§4）。再実行してもおおむね安全なよう記述。
 --
--- 【この版の変更点】実売上（§7.2）用に drink_price を追加。
+-- 【この版の変更点】記録の削除（§7.3）に対応。
+--   ・daily_expenses.related_slip_id のFKを on delete cascade に張り替え
+--     （伝票を1文で消せば明細＋集約バック行も同時に消える＝中途半端な状態が起きない）
+--   ・sales_slips に sales_rate / drink_unit のスナップショット列を追加
+--     （編集時のバック再計算を「登録時点の設定」で行うため・§12）
+--
+-- 【前版の変更点】実売上（§7.2）用に drink_price を追加。
 --   ・app_settings.drink_price = ドリンク販売単価の設定値（既定800円・設定画面から変更可）
 --   ・sales_slips.drink_price  = 登録時点のスナップショット（back_amount と同じ思想）
 --   既存DBには後段の alter ... add column if not exists で追加される（既存行は800で埋まる）。
@@ -39,7 +45,10 @@ create table if not exists sales_slips (
   date date not null,
   primary_staff_id uuid not null references staff_members(id), -- 主担当（席担当）
   total_amount int not null,                                   -- 伝票総額
-  drink_price int not null default 800,                        -- 登録時点のドリンク販売単価スナップショット（実売上の計算に使用・§7.2）
+  -- 登録時点の設定スナップショット（§12）。編集時のバック再計算はこの値で行う。
+  sales_rate numeric not null default 0.10,                    -- 売上バック率（§6）
+  drink_unit int not null default 300,                         -- ドリンクバック単価（§6）
+  drink_price int not null default 800,                        -- ドリンク販売単価（実売上の計算に使用・§7.2）
   ages text[],                                                 -- 客層（伝票=1組の属性）
   memo text,
   created_at timestamptz default now()
@@ -75,7 +84,9 @@ create table if not exists daily_expenses (
   category text not null,
   memo text,
   is_auto_back boolean not null default false,
-  related_slip_id uuid references sales_slips(id),
+  -- 伝票を削除したら集約バック行も一緒に消える（§7.3）。
+  -- アプリ側で2文に分けて消すと、片方だけ失敗して「バックだけ消えて売上が残る」ズレが起きうる。
+  related_slip_id uuid references sales_slips(id) on delete cascade,
   created_at timestamptz default now()
 );
 
@@ -99,15 +110,16 @@ BEGIN
     alter table daily_expenses add column related_slip_id uuid;
   end if;
 
-  -- 新FK（無ければ付与）
-  if not exists (select 1 from information_schema.table_constraints
-                 where table_name = 'daily_expenses'
-                   and constraint_name = 'daily_expenses_related_slip_id_fkey') then
-    alter table daily_expenses
-      add constraint daily_expenses_related_slip_id_fkey
-      foreign key (related_slip_id) references sales_slips(id);
-  end if;
 END $$;
+
+-- ---------- 集約バック行のFK（on delete cascade・冪等） ----------
+-- 伝票削除で明細（slip_id の cascade）と集約バック行が同時に消えるようにする（§7.3）。
+-- cascade が無いと、バック行が参照している伝票は FK 違反で削除できない。
+-- drop → add なので、旧 cascade なしのFKが残っているDBでも通しで実行すれば張り替わる。
+alter table daily_expenses drop constraint if exists daily_expenses_related_slip_id_fkey;
+alter table daily_expenses
+  add constraint daily_expenses_related_slip_id_fkey
+  foreign key (related_slip_id) references sales_slips(id) on delete cascade;
 
 -- ---------- 旧 daily_sales の撤去 ----------
 -- daily_expenses から参照FKを外した後なら安全に削除できる（データは空・§13）。
@@ -135,6 +147,36 @@ create table if not exists app_settings (
 -- 既存行は default 800 で自動的に埋まる（= 現行の店頭価格）。
 alter table app_settings add column if not exists drink_price int not null default 800;
 alter table sales_slips  add column if not exists drink_price int not null default 800;
+
+-- ---------- sales_rate / drink_unit のスナップショット列（既存DB向け・冪等） ----------
+-- 伝票の編集時、バックは「登録時点の設定」で再計算する必要がある（§12）。
+-- back_amount（結果）だけでは率・単価を逆算できない（floor で情報が落ちる／0杯の担当からは単価を割り出せない）ため、
+-- 率と単価そのものを伝票に持たせる。drink_price と同じ扱い。
+--
+-- ここで DO ブロックが要るのは、既存伝票のバックフィルに update が必要なため。
+-- 無条件の update だと schema.sql を再実行するたびに全伝票のスナップショットが
+-- 現在の設定値で上書きされて壊れる。「列が無いときだけ実行」で冪等性を守る。
+DO $$
+BEGIN
+  if not exists (select 1 from information_schema.columns
+                 where table_name = 'sales_slips' and column_name = 'sales_rate') then
+    alter table sales_slips add column sales_rate numeric;
+    alter table sales_slips add column drink_unit int;
+
+    -- 既存伝票には「現在の設定値」を埋める（ハードコードの既定値より実態に近い）
+    update sales_slips s
+      set sales_rate = a.sales_rate, drink_unit = a.drink_unit
+      from app_settings a where a.id = 1;
+    -- app_settings が未投入だった場合の保険
+    update sales_slips set sales_rate = 0.10 where sales_rate is null;
+    update sales_slips set drink_unit = 300  where drink_unit is null;
+
+    alter table sales_slips alter column sales_rate set not null;
+    alter table sales_slips alter column sales_rate set default 0.10;
+    alter table sales_slips alter column drink_unit set not null;
+    alter table sales_slips alter column drink_unit set default 300;
+  end if;
+END $$;
 
 -- ---------- RLS（全テーブル anon 全許可・§4） ----------
 alter table staff_members       enable row level security;

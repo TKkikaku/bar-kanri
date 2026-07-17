@@ -288,7 +288,11 @@ body {
 .rec-amount.income { color: var(--green-dark); }
 .rec-amount.expense { color: var(--red-dark); }
 .rec-meta { font-size: 12px; color: var(--text-sub); margin-top: 4px; font-weight: 500; }
-.rec-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+/* align-items:center は必須。削除ボタン（btn-mini）がバッジより背が高いため、
+   既定の stretch だとバッジが縦に引き伸ばされて崩れる。 */
+.rec-badges { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+/* 削除ボタンは右端へ。自動バック行には出さない（§7.3） */
+.rec-badges .rec-del { margin-left: auto; }
 .badge {
   font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 999px;
   background: var(--bg-alt); color: var(--text-sub);

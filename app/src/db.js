@@ -85,7 +85,9 @@ export async function addSlip(slip) {
       date: slip.date,
       primary_staff_id: slip.primary_staff_id,
       total_amount: slip.total_amount,
-      // 実売上の計算に使う販売単価を登録時点で確定（§7.2）
+      // 登録時点の設定スナップショット（§12）。編集時のバック再計算はこの値で行う。
+      sales_rate: Number(settings.sales_rate) || 0,
+      drink_unit: Number(settings.drink_unit) || 0,
       drink_price: Number(settings.drink_price) || 0,
       ages: slip.ages && slip.ages.length ? slip.ages : null,
       memo: slip.memo || null,
@@ -121,6 +123,27 @@ export async function addSlip(slip) {
   }
 
   return { slip: header, detailBacks, back }
+}
+
+// 伝票を削除（§7.3）。1文で完結する＝途中失敗による不整合が起きない。
+//   ・明細        … sales_slip_details.slip_id の on delete cascade で同時削除
+//   ・集約バック行 … daily_expenses.related_slip_id の on delete cascade で同時削除
+// アプリ側で2文に分けると、後半が失敗したとき「バックだけ消えて売上が残る」ズレが生まれる。
+export async function deleteSlip(id) {
+  const { error } = await supabase.from('sales_slips').delete().eq('id', id)
+  if (error) throw error
+}
+
+// 支出を削除（§7.3）。**手入力行のみ**。
+// 自動バック行は伝票の従属物で、単体で消すと整合性が壊れるため is_auto_back = false で二重にガードする
+// （UI 側でも削除ボタンを出していないが、サーバー側の条件でも防ぐ）。
+export async function deleteExpense(id) {
+  const { error } = await supabase
+    .from('daily_expenses')
+    .delete()
+    .eq('id', id)
+    .eq('is_auto_back', false)
+  if (error) throw error
 }
 
 // 月の範囲（YYYY-MM → [start, next)）
